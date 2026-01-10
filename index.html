@@ -5,6 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Rabbit Casino - Soul & Skill Edition</title>
 <style>
+/* --- 常駐 UNO 按鈕 --- */
+    .fixed-uno-btn {
+        position: absolute;
+        bottom: 140px; /* 位置在手牌上方 */
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: radial-gradient(circle, #ff3333 0%, #990000 100%);
+        border: 3px solid #fff;
+        border-radius: 50%;
+        color: white;
+        font-family: 'Cinzel', serif;
+        font-weight: bold;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 50; /* 確保在最上層 */
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        transition: transform 0.1s;
+        animation: pulseBtn 2s infinite;
+    }
+    .fixed-uno-btn:active { transform: scale(0.9); }
+    @keyframes pulseBtn { 0%{box-shadow: 0 0 5px #f00;} 50%{box-shadow: 0 0 20px #f00;} 100%{box-shadow: 0 0 5px #f00;} }
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap');
 
     :root {
@@ -432,6 +457,7 @@
             <div id="table-cards" style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap"></div>
         </div>
         <div class="player-area">
+            <div class="fixed-uno-btn" onclick="userShoutUno()">UNO!</div>
             <div class="player-uno-badge" id="player-badge">UNO</div>
             <div class="bj-score-badge" id="bj-score">0</div>
             <div class="controls" id="controls"></div>
@@ -781,7 +807,7 @@ const CHARS = [
             bigtwo: {name:"寂靜殺手", desc:"手牌剩最後一張時，該牌視為 Joker (比黑桃 2 大)。"}
         },
         cp_skill: { name: "深海", desc: "與海神連動：冥神手牌數越少，海神抽到好牌的機率越高。" },
-        lines: { start: ["...", "(抱著浮板)"], play: ["...", "(點頭)"], win: ["...", "(發呆)"], lose: ["...", "(發呆)"], uno_attack: ["...給。", "(放下牌)"], uno_hit: ["...", "(默默抽牌)"], uno_uno: ["...", "(無視規則)"], uno_catch: ["...", "(指著你)"], uno_forgot: ["...", "..."], uno_late: ["...UNO。"], uno_skip: ["...", "(發呆)"], uno_draw_many: ["...", "..."], uno_stack: ["...", "(推給你)"], uno_poke_early: ["...", "(搖頭)"], uno_poke_late: ["...", "(點頭)"], loan_reject: ["...", "(轉身)"] },
+        lines: { start: ["...", "(抱著浮板)"], play: ["...", "(點頭)"], win: ["...", "(發呆)"], lose: ["...", "(發呆)"], uno_attack: ["...給。", "(放下)"], uno_hit: ["...", "(默默抽牌)"], uno_uno: ["...", "(無視規則)"], uno_catch: ["...", "(指著你)"], uno_forgot: ["...", "..."], uno_late: ["...UNO。"], uno_skip: ["...", "(發呆)"], uno_draw_many: ["...", "..."], uno_stack: ["...", "(推給你)"], uno_poke_early: ["...", "(搖頭)"], uno_poke_late: ["...", "(點頭)"], loan_reject: ["...", "(轉身)"] },
         loanStages: [ { text: "...", opts:[{t:"(伸出手)", next:1}, {t:"(轉身離開)", next:-1}], }, { text: "...", reward: 300 } ]
     },
     { 
@@ -1340,19 +1366,40 @@ function startUNO() {
     renderHand(); renderTable([first]); updateOpponentVisuals(); setStatus("UNO START!"); setTimeout(unoTurn, 1500); 
 }
 function unoTurn() { 
-    const winners = App.players.filter(p => p.hand.length === 0); if(winners.length > 0) { const userWon = winners[0].isUser; setTimeout(() => showResult(userWon, userWon ? 3000 : -1000, userWon ? "UNO VICTORY!" : "UNO DEFEAT"), 1000); return; } 
-    const pIdx = App.turn; const p = App.players[pIdx]; const top = App.table[App.table.length - 1]; 
-    document.querySelectorAll('.seat').forEach(s=>s.classList.remove('active')); if(pIdx < 3) document.getElementById(`seat-${pIdx}`).classList.add('active'); 
+    // 1. 檢查勝利條件
+    const winners = App.players.filter(p => p.hand.length === 0); 
+    if(winners.length > 0) { 
+        const userWon = winners[0].isUser; 
+        setTimeout(() => showResult(userWon, userWon ? 3000 : -1000, userWon ? "UNO VICTORY!" : "UNO DEFEAT"), 1000); 
+        return; 
+    } 
+
+    const pIdx = App.turn; 
+    const p = App.players[pIdx]; 
+    const top = App.table[App.table.length - 1]; 
+
+    // 更新座位高亮
+    document.querySelectorAll('.seat').forEach(s=>s.classList.remove('active')); 
+    if(pIdx < 3) document.getElementById(`seat-${pIdx}`).classList.add('active'); 
     
+    // 2. 處理疊加懲罰邏輯 (Stacking)
     if(App.unoStack > 0) { 
         if(p.isUser) { 
             setStatus(`PENALTY: +${App.unoStack}!`); 
             const defense = p.hand.filter(c => unoStackCheck(c, top)); 
             if(defense.length > 0) { 
                 const ctrls = document.getElementById('controls'); ctrls.innerHTML = ''; 
-                const btn = document.createElement('button'); btn.className = `btn-act btn-shout show`; btn.innerText = `ACCEPT (+${App.unoStack})`; btn.onclick = () => unoAcceptPenalty(pIdx); ctrls.appendChild(btn); setStatus("PLAY STACK CARD OR ACCEPT?"); 
-            } else { setTimeout(() => unoAcceptPenalty(pIdx), 1000); } 
+                const btn = document.createElement('button'); 
+                btn.className = `btn-act btn-shout show`; 
+                btn.innerText = `ACCEPT (+${App.unoStack})`; 
+                btn.onclick = () => unoAcceptPenalty(pIdx); 
+                ctrls.appendChild(btn); 
+                setStatus("PLAY STACK CARD OR ACCEPT?"); 
+            } else { 
+                setTimeout(() => unoAcceptPenalty(pIdx), 1000); 
+            } 
         } else { 
+            // AI 應對疊加
             const defense = p.hand.filter(c => unoStackCheck(c, top)); 
             const kleionForce = (p.char.id === 'kleion' && p.hand.some(c => c.type === 'draw2') && top.type === 'draw2');
             if(defense.length > 0 || kleionForce) { 
@@ -1360,22 +1407,46 @@ function unoTurn() {
                  if(kleionForce) triggerSkill(pIdx, p.char.skills.uno);
                  say(pIdx, 'uno_stack'); 
                  setTimeout(() => { p.hand = p.hand.filter(x => x !== c); unoExecute(pIdx, c); }, 1000); 
-            } else { setTimeout(() => unoAcceptPenalty(pIdx), 1000); } 
+            } else { 
+                setTimeout(() => unoAcceptPenalty(pIdx), 1000); 
+            } 
         } 
         return; 
     } 
     
+    // 3. 正常出牌邏輯
     if(p.isUser) { 
-        setStatus("YOUR TURN"); const playable = p.hand.filter(c => unoCheck(c, top)); const ctrls = document.getElementById('controls'); ctrls.innerHTML = ''; 
-        const btnUno = document.createElement('button'); btnUno.className = 'btn-act btn-shout show'; btnUno.innerText = "UNO!"; btnUno.onclick = () => userShoutUno(); ctrls.appendChild(btnUno); 
-        if(playable.length === 0) { const btnDraw = document.createElement('button'); btnDraw.className = 'btn-act show'; btnDraw.innerText = "DRAW"; btnDraw.onclick = () => unoDraw(pIdx); ctrls.appendChild(btnDraw); } 
+        setStatus("YOUR TURN"); 
+        const playable = p.hand.filter(c => unoCheck(c, top)); 
+        const ctrls = document.getElementById('controls'); 
+        ctrls.innerHTML = ''; 
+        
+        // (已移除原本的 UNO 按鈕代碼，現在由右下角常駐按鈕負責)
+
+        if(playable.length === 0) { 
+            const btnDraw = document.createElement('button'); 
+            btnDraw.className = 'btn-act show'; 
+            btnDraw.innerText = "DRAW"; 
+            btnDraw.onclick = () => unoDraw(pIdx); 
+            ctrls.appendChild(btnDraw); 
+        } 
     } else { 
+        // AI 回合
         setStatus(`${p.char.name}'s TURN`); 
-        App.players.forEach((opp, i) => { if(i !== pIdx && opp.vulnerable && Math.random() < p.char.uno_catch_rate) { setTimeout(() => catchPlayer(i, pIdx), 500); return; } }); 
+        
+        // AI 嘗試抓人 (Catch)
+        App.players.forEach((opp, i) => { 
+            if(i !== pIdx && opp.vulnerable && Math.random() < p.char.uno_catch_rate) { 
+                setTimeout(() => catchPlayer(i, pIdx), 500); 
+                return; 
+            } 
+        }); 
+
         setTimeout(() => { 
             const playable = p.hand.filter(c => unoCheck(c, top)); 
             if(playable.length > 0) { 
                 const playCard = playable[0]; 
+                // AI 選擇變色顏色
                 if(playCard.color === 'black') { 
                     const counts = {red:0, yellow:0, green:0, blue:0}; 
                     p.hand.forEach(c => { if(c.color!=='black') counts[c.color]++; }); 
@@ -1383,7 +1454,9 @@ function unoTurn() {
                 } 
                 p.hand = p.hand.filter(c => c !== playCard); 
                 unoExecute(pIdx, playCard); 
-            } else { unoDraw(pIdx); } 
+            } else { 
+                unoDraw(pIdx); 
+            } 
         }, 1200); 
     } 
 }
@@ -1408,7 +1481,22 @@ function unoAcceptPenalty(pIdx) {
         dLoop++; if(p.isUser) renderHand(); else updateOpponentVisuals(); setTimeout(deal, 150); 
     }; deal(); 
 }
-function userShoutUno() { const p = App.players[3]; if(p.hand.length <= 2 && !p.unoSaid) { p.unoSaid = true; sfx('sfx-win'); setStatus("YOU SHOUTED UNO!"); updateOpponentVisuals(); } }
+function userShoutUno() {
+    const p = App.players[3];
+    // 只要手牌 <= 2 且還沒喊過，就可以喊 (包含剛出完牌的瞬間)
+    if (p.hand.length <= 2 && !p.unoSaid) {
+        p.unoSaid = true;
+        p.vulnerable = false; // 修正：喊了之後馬上解除被抓的風險
+        sfx('sfx-win');
+        setStatus("YOU SHOUTED UNO!");
+        
+        // 顯示原本的 badge 作為回饋
+        const b = document.getElementById('player-badge');
+        if (b) b.classList.add('show');
+        
+        updateOpponentVisuals();
+    }
+}
 function onSeatClick(targetIdx) { 
     if(App.gameId !== 'uno') return; const target = App.players[targetIdx]; const seat = document.getElementById(`seat-${targetIdx}`); seat.classList.add('shake'); setTimeout(() => seat.classList.remove('shake'), 400);
     if(target.hand.length === 1 && !target.unoSaid) { catchPlayer(targetIdx, 3); } else { if(target.unoSaid) say(targetIdx, 'uno_poke_late'); else say(targetIdx, 'uno_poke_early'); }
@@ -1416,7 +1504,19 @@ function onSeatClick(targetIdx) {
 function showCatchEffect(targetIdx) { const seat = document.getElementById(`seat-${targetIdx}`); if(seat) { const eff = document.createElement('div'); eff.className = 'catch-effect'; eff.innerText = "CAUGHT!"; seat.appendChild(eff); setTimeout(() => eff.remove(), 1000); } }
 function catchPlayer(victimIdx, catcherIdx) { 
     const victim = App.players[victimIdx]; 
-    if(!victim.isUser && (victim.char.id==='jonona'||victim.char.id==='costa') && Math.random()>0.5) { triggerSkill(victimIdx, victim.char.skills.uno); return; } 
+    
+    // --- 修改這裡：技能觸發後強制喊 UNO 並免疫 ---
+    if(!victim.isUser && (victim.char.id==='jonona'||victim.char.id==='costa') && Math.random()>0.5) { 
+        triggerSkill(victimIdx, victim.char.skills.uno); 
+        // 修正：發動技能後，視為已經喊過 UNO，並且解除脆弱狀態
+        victim.unoSaid = true;
+        victim.vulnerable = false;
+        say(victimIdx, 'uno_late'); // 讓她們說一句話
+        updateOpponentVisuals(); // 更新畫面狀態
+        return; 
+    } 
+    // ------------------------------------------
+
     if(victim.vulnerable || (victim.hand.length===1 && !victim.unoSaid)) { 
         victim.vulnerable = false; 
         if(catcherIdx !== 3) { say(catcherIdx, 'uno_catch'); } else { setStatus("YOU CAUGHT THEM!"); sfx('sfx-win'); showCatchEffect(victimIdx); } 
