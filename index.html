@@ -145,27 +145,105 @@
     .skill-cp-section { border-left-color: #ff55aa; background: rgba(255, 85, 170, 0.05); margin-top: 10px; }
     .skill-cp-section .skill-title { color: #ff55aa; }
 
-    /* --- Skill Toast (Notification) --- */
+/* --- Skill Toast (頭像動效版) --- */
     .skill-toast {
-        position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.95); border: 1px solid var(--gold);
-        color: #fff; padding: 12px 20px; text-align: center;
-        border-radius: 8px; pointer-events: none; opacity: 0; z-index: 2000;
-        width: 85%; max-width: 350px;
-        box-shadow: 0 0 30px rgba(0,0,0,0.9), 0 0 10px var(--gold-glow);
-        display: flex; flex-direction: column; align-items: center;
-    }
-    .skill-toast.show { animation: popInFadeOut 3.5s forwards; }
-    @keyframes popInFadeOut { 
-        0% { opacity: 0; transform: translate(-50%, -40%) scale(0.9); } 
-        10% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 
-        85% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 
-        100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } 
-    }
-    .st-title { font-family: 'Cinzel'; color: var(--gold); font-size: 1.1rem; font-weight: bold; margin-bottom: 4px; }
-    .st-user { color: #fff; font-size: 0.9rem; margin-bottom: 4px; }
-    .st-desc { font-size: 0.8rem; color: #aaa; }
+        position: absolute; 
+        top: 30%; /* 位置在畫面上方 */
+        left: 50%; 
+        transform: translateX(-50%);
+        z-index: 2000;
 
+        /* 佈局設定 */
+        display: flex;
+        align-items: center;
+        gap: 12px; /* 頭像與文字的間距 */
+
+        /* 視覺美化 */
+        background: linear-gradient(90deg, rgba(0,0,0,0.9), rgba(25,25,25,0.95));
+        border: 1px solid var(--gold);
+        border-left: 4px solid var(--gold); /* 左側金色裝飾條 */
+        border-radius: 50px; /* 膠囊形狀 */
+        padding: 6px 20px 6px 6px; /* 左側留給頭像，右側多一點留白 */
+        box-shadow: 0 5px 20px rgba(0,0,0,0.8), 0 0 10px rgba(212, 175, 55, 0.3);
+        
+        /* 初始狀態 */
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s ease;
+        max-width: 90%;
+        white-space: nowrap;
+    }
+
+    /* 進場動畫：滑入並帶有一點彈性 */
+    .skill-toast.show {
+        animation: skillSlideIn 2.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes skillSlideIn {
+        0% { opacity: 0; transform: translate(-50%, -30px) scale(0.9); }
+        15% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+        85% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+        100% { opacity: 0; transform: translate(-50%, -20px) scale(0.95); }
+    }
+
+    /* 頭像樣式 */
+    .st-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 2px solid var(--gold);
+        object-fit: cover;
+        background: #000;
+        box-shadow: 0 0 5px var(--gold-glow);
+    }
+
+    /* 文字容器 */
+    .st-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+    }
+
+    .st-title { 
+        font-family: 'Cinzel', serif; 
+        color: var(--gold); 
+        font-size: 1rem; 
+        font-weight: bold; 
+        line-height: 1.1;
+        text-shadow: 0 2px 2px rgba(0,0,0,0.8);
+        margin: 0;
+    }
+    
+    .st-user { 
+        color: #bbb; 
+        font-size: 0.75rem; 
+        margin-top: 2px;
+        font-family: 'Noto Serif TC', serif;
+    }
+    
+    .st-desc { display: none; } /* 隱藏詳細描述，保持畫面簡潔 */
+    @keyframes popInFadeOut { 
+        0% { opacity: 0; transform: translate(-50%, -30%) scale(0.8); } 
+        10% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 
+        90% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 
+        100% { opacity: 0; transform: translate(-50%, -70%) scale(0.9); } 
+    }
+
+    /* 字體調整 */
+    .st-title { 
+        font-family: 'Cinzel'; 
+        color: var(--gold); 
+        font-size: 1rem; /* 字體縮小 */
+        font-weight: bold; 
+        margin: 0; 
+    }
+    .st-user { 
+        color: #ddd; 
+        font-size: 0.9rem; 
+        margin: 0; 
+    }
+    .st-desc { display: none; } /* 直接隱藏技能描述 */
     /* --- Game Area --- */
     .game-area { flex: 1; display: flex; flex-direction: column; position: relative; }
     .status-bar { text-align: center; font-family: 'Cinzel'; font-size: 0.9rem; color: #aaa; padding: 5px; background: rgba(0,0,0,0.5); min-height: 30px; margin-top: 10px; }
@@ -892,15 +970,37 @@ function triggerSkill(pIdx, skill) {
     processSkillQueue();
 }
 function processSkillQueue() {
-    if(App.isProcessingSkill || App.skillQueue.length === 0) return;
+    if (App.isProcessingSkill || App.skillQueue.length === 0) return;
     App.isProcessingSkill = true;
     const item = App.skillQueue.shift();
-    // Only show skill name if AI
-    const pName = App.players[item.pIdx].char.name;
+    
+    // 獲取角色資料
+    const charData = App.players[item.pIdx].char;
+    
     const t = document.getElementById('skill-toast');
-    t.innerHTML = `<div class="st-title">★ ${item.skill.name}</div><div class="st-user">${pName} 發動了技能！</div><div class="st-desc">${item.skill.desc}</div>`;
-    t.classList.remove('show'); void t.offsetWidth; t.classList.add('show'); sfx('sfx-win');
-    setTimeout(() => { t.classList.remove('show'); App.isProcessingSkill = false; processSkillQueue(); }, 3500);
+    
+    // 插入包含圖片的 HTML
+    // 左邊是頭像，右邊是文字區塊
+    t.innerHTML = `
+        <img src="${charData.img}" class="st-avatar">
+        <div class="st-content">
+            <div class="st-title">★ ${item.skill.name}</div>
+            <div class="st-user">${charData.name}</div>
+        </div>
+    `;
+    
+    t.classList.remove('show');
+    void t.offsetWidth; // 重置動畫
+    t.classList.add('show');
+    
+    sfx('sfx-win'); // 播放音效
+    
+    // 配合 CSS 動畫長度 (2.8s)
+    setTimeout(() => {
+        t.classList.remove('show');
+        App.isProcessingSkill = false;
+        processSkillQueue();
+    }, 2800);
 }
 
 // ★★★ NEW FUNCTION: Rigging Hands for AI ONLY ★★★
