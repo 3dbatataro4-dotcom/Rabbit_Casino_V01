@@ -7,13 +7,21 @@
 <title>Rabbit Casino - Soul & Skill Edition</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap');
-/* --- 常駐 UNO 按鈕 --- */
+    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap');
+
+/* --- 1. 隱藏舊的 UNO 標示 --- */
+    .player-uno-badge { display: none !important; }
+
+    /* --- 2. UNO 按鈕樣式 (含變色狀態) --- */
     .fixed-uno-btn {
         position: absolute;
-        bottom: 250px; /* 位置在手牌上方 */
-        right: 300px;
+updateOpponentVisuals        
+position: absolute;
+right: 20px;
+bottom: 280px;
         width: 60px;
         height: 60px;
+        /* 預設紅色 (未喊) */
         background: radial-gradient(circle, #ff3333 0%, #990000 100%);
         border: 3px solid #fff;
         border-radius: 50%;
@@ -21,19 +29,29 @@
         font-family: 'Cinzel', serif;
         font-weight: bold;
         font-size: 1rem;
-        display: flex;
+        display: none;
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        z-index: 50; /* 確保在最上層 */
+        z-index: 50;
         box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        transition: transform 0.1s;
+        transition: all 0.3s ease;
         animation: pulseBtn 2s infinite;
     }
+    
     .fixed-uno-btn:active { transform: scale(0.9); }
-    @keyframes pulseBtn { 0%{box-shadow: 0 0 5px #f00;} 50%{box-shadow: 0 0 20px #f00;} 100%{box-shadow: 0 0 5px #f00;} }
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap');
 
+    /* 新增：已喊過 UNO 的狀態 (變綠色 + 停止跳動) */
+    .fixed-uno-btn.said {
+        background: radial-gradient(circle, #55aa55 0%, #006600 100%); /* 綠色 */
+        box-shadow: 0 0 10px #0f0;
+        border-color: #ccc;
+        animation: none; /* 停止跳動 */
+        transform: scale(0.9); /* 稍微縮小表示已按下 */
+        cursor: default;
+    }
+
+    @keyframes pulseBtn { 0%{box-shadow: 0 0 5px #f00;} 50%{box-shadow: 0 0 20px #f00;} 100%{box-shadow: 0 0 5px #f00;} }
     :root {
         --bg: #050505;
         --gold: #d4af37;
@@ -1126,7 +1144,18 @@ function initGame() {
         area.appendChild(div);
         setTimeout(() => say(i, 'start'), i * 800 + 500);
     }
-    
+    // --- ★ 新增這段：控制 UNO 按鈕的顯示狀態 ---
+const unoBtn = document.querySelector('.fixed-uno-btn');
+if (unoBtn) {
+    if (App.gameId === 'uno') {
+        unoBtn.style.display = 'flex'; // 只有 UNO 模式顯示
+        unoBtn.classList.remove('said'); // 重置狀態
+        unoBtn.innerText = "UNO!";
+    } else {
+        unoBtn.style.display = 'none'; // 其他遊戲隱藏
+    }
+}
+// ------------------------------------------
     document.getElementById('table-cards').innerHTML = ''; document.getElementById('msg-large').className = 'msg-large'; document.getElementById('bj-score').style.display = 'none';
     hideControls(); setStatus("");
     
@@ -1624,7 +1653,18 @@ function setControls(l1,l2,f1,f2) { const c = document.getElementById('controls'
 function hideControls() { document.getElementById('controls').innerHTML=''; }
 function renderHand() { const d = document.getElementById('player-hand'); d.innerHTML=''; const h = App.players[App.players.length-1].hand; if(App.gameId==='bigtwo') h.sort((a,b)=>a.val-b.val); d.className = h.length < 5 ? 'my-hand few-cards' : 'my-hand'; h.forEach(c => { const el = document.createElement('div'); if(c.type) { let colorClass = `uno-${c.tempColor || c.color}`; el.className = `card uno ${colorClass}`; let displayVal = c.val; if(c.type==='skip') displayVal = '⊘'; if(c.type==='reverse') displayVal = '⇄'; if(c.type==='draw2') displayVal = '+2'; el.innerHTML = `<div class="uno-corner">${displayVal}</div><div class="card-center-uno">${displayVal}</div><div class="uno-corner" style="top:auto;bottom:5px;left:auto;right:5px;transform:rotate(180deg)">${displayVal}</div>`; el.onclick = () => unoUserClick(c); } else { el.className = `card ${['♥','♦'].includes(c.s)?'red':'black'}`; el.innerHTML = `<div class="card-corner"><div>${c.r}</div><div>${c.s}</div></div><div class="card-center-suit">${c.s}</div>`; el.onclick = () => { c.sel=!c.sel; renderHand(); }; if(c.sel) el.classList.add('selected'); } d.appendChild(el); }); }
 function renderTable(cards) { const d=document.getElementById('table-cards'); d.innerHTML=''; cards.forEach(c=>{ const el=document.createElement('div'); if(c.type) { let colorClass = `uno-${c.tempColor || c.color}`; el.className = `card uno ${colorClass}`; let displayVal = c.val; if(c.type==='skip') displayVal = '⊘'; if(c.type==='reverse') displayVal = '⇄'; if(c.type==='draw2') displayVal = '+2'; el.innerHTML = `<div class="uno-corner">${displayVal}</div><div class="card-center-uno">${displayVal}</div>`; } else { el.className=`card ${['♥','♦'].includes(c.s)?'red':'black'}`; el.innerHTML = `<div class="card-corner"><div>${c.r}</div><div>${c.s}</div></div><div class="card-center-suit">${c.s}</div>`; } d.appendChild(el); }); }
-function updateOpponentVisuals() { const uBadge = document.getElementById('player-badge'); if(App.players[3].unoSaid) uBadge.classList.add('show'); else uBadge.classList.remove('show'); for(let i=0; i<App.players.length-1; i++) { const p = App.players[i]; if(App.gameId === 'oldmaid' || App.gameId === 'uno') { const c = document.getElementById(`mini-hand-${i}`); if(c) { c.innerHTML = ''; const count = Math.min(p.hand.length, 25); for(let j=0; j<count; j++) { let cls = 'mini-card'; if(App.gameId === 'uno') cls += ' uno-back'; c.innerHTML += `<div class="${cls}"></div>`; } if(p.hand.length > 25) { c.innerHTML += `<div style="font-size:0.6rem;color:#fff;align-self:center">+${p.hand.length-25}</div>`; } } const b = document.getElementById(`uno-badge-${i}`); if(b) { if(p.unoSaid) b.classList.add('show'); else b.classList.remove('show'); } } if(App.gameId === 'bigtwo') { const b = document.getElementById(`b2-badge-${i}`); if(b) b.innerText = p.hand.length; } } }
+function updateOpponentVisuals() {
+    const btn = document.querySelector('.fixed-uno-btn');
+if (btn) {
+    if (App.players[3].unoSaid) {
+        btn.classList.add('said'); // 變綠色
+        btn.innerText = "SAFE"; // 文字變 SAFE
+    } else {
+        btn.classList.remove('said'); // 變回紅色
+        btn.innerText = "UNO!"; // 文字變回 UNO!
+    }
+}
+const uBadge = document.getElementById('player-badge'); if(App.players[3].unoSaid) uBadge.classList.add('show'); else uBadge.classList.remove('show'); for(let i=0; i<App.players.length-1; i++) { const p = App.players[i]; if(App.gameId === 'oldmaid' || App.gameId === 'uno') { const c = document.getElementById(`mini-hand-${i}`); if(c) { c.innerHTML = ''; const count = Math.min(p.hand.length, 25); for(let j=0; j<count; j++) { let cls = 'mini-card'; if(App.gameId === 'uno') cls += ' uno-back'; c.innerHTML += `<div class="${cls}"></div>`; } if(p.hand.length > 25) { c.innerHTML += `<div style="font-size:0.6rem;color:#fff;align-self:center">+${p.hand.length-25}</div>`; } } const b = document.getElementById(`uno-badge-${i}`); if(b) { if(p.unoSaid) b.classList.add('show'); else b.classList.remove('show'); } } if(App.gameId === 'bigtwo') { const b = document.getElementById(`b2-badge-${i}`); if(b) b.innerText = p.hand.length; } } }
 function showResult(win, amt, msg="") { const m = document.getElementById('modal-result'); if(win === 'push') { document.getElementById('res-title').innerText="PUSH"; document.getElementById('res-title').style.color="#fff"; updateScore(amt); } else if(win) { App.wins++; document.getElementById('res-title').innerText="VICTORY"; document.getElementById('res-title').style.color="var(--gold)"; sfx('sfx-win'); updateScore(amt); } else { App.losses++; document.getElementById('res-title').innerText="DEFEAT"; document.getElementById('res-title').style.color="#888"; updateScore(amt); } let fullMsg = (amt>0?"+":"") + amt + " Coins"; if(msg) fullMsg += `<br><span style='font-size:0.8rem;color:#aaa'>${msg}</span>`; document.getElementById('res-msg').innerHTML = fullMsg; updateUI(); m.style.display = 'flex'; }
 </script>
 </body>
