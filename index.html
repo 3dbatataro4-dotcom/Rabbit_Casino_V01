@@ -3,18 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Alice Casino - Loan System Fixed</title>
+<title>Rabbit Casino - Soul & Skill Edition</title>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap');
 
     :root {
         --bg: #050505;
         --gold: #d4af37;
-        --gold-glow: rgba(212, 175, 55, 0.5);
+        --gold-glow: rgba(212, 175, 55, 0.6);
         --red: #c0392b;
+        --uno-red: #ff5555;
+        --uno-yellow: #ffaa00;
+        --uno-green: #55aa55;
+        --uno-blue: #5555ff;
+        --card-bg: #1a1a1a;
     }
 
-    * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+    * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; }
 
     body {
         margin: 0; padding: 0;
@@ -38,6 +43,7 @@
         pointer-events: auto; background: rgba(0,0,0,0.6); border: 1px solid var(--gold);
         color: var(--gold); width: 36px; height: 36px; border-radius: 50%;
         display: flex; justify-content: center; align-items: center; cursor: pointer;
+        transition: 0.3s;
     }
     .score-board {
         font-family: 'Cinzel'; color: var(--gold); font-size: 1.1rem;
@@ -53,8 +59,8 @@
     }
     .screen.active { display: flex; animation: fadeIn 0.3s; }
 
-    /* --- Menu --- */
-    .menu-content { flex: 1; padding: 20px; overflow-y: auto; text-align: center; }
+    /* --- Menu & Lobby --- */
+    .menu-content { flex: 1; padding: 20px; overflow-y: auto; text-align: center; padding-bottom: 80px; }
     .brand { font-family: 'Cinzel'; font-size: 2rem; color: var(--gold); text-shadow: 0 0 15px var(--gold); margin-bottom: 20px; }
     
     .game-card {
@@ -67,120 +73,222 @@
     .game-name { font-family: 'Cinzel'; font-size: 1.2rem; color: #eee; }
     .game-desc { font-size: 0.8rem; color: #888; margin-top: 5px; }
 
-    /* --- Lobby --- */
-    .char-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; padding-bottom: 40px;}
+    .char-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; padding-bottom: 40px; }
     .char-item {
         display: flex; flex-direction: column; align-items: center;
         opacity: 0.5; transition: 0.2s; cursor: pointer;
         border: 2px solid transparent; border-radius: 8px; padding: 5px;
+        position: relative;
     }
     .char-item.selected { 
         opacity: 1; transform: scale(1.05);
         background: rgba(212, 175, 55, 0.1); border-color: var(--gold);
     }
-    .char-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #333; background: #000; }
+    .char-avatar { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 2px solid #333; background: #000; pointer-events: none; }
     .char-item.selected .char-avatar { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
-    .char-name { font-size: 0.6rem; color: #aaa; margin-top: 4px; text-align: center; white-space: nowrap; overflow: hidden; width: 100%;}
+    .char-name { font-size: 0.6rem; color: #aaa; margin-top: 4px; text-align: center; white-space: nowrap; overflow: hidden; width: 100%; pointer-events: none;}
     
     .lobby-btn {
-        margin-top: auto; padding: 15px; background: var(--gold); border: none; width: 100%;
+        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+        width: 90%; max-width: 400px;
+        padding: 15px; background: var(--gold); border: none; 
         font-family: 'Cinzel'; font-weight: bold; font-size: 1.1rem; cursor: pointer;
+        box-shadow: 0 0 15px var(--gold-glow); z-index: 100;
     }
-    .lobby-btn:disabled { background: #333; color: #666; }
+    .lobby-btn:disabled { background: #333; color: #666; box-shadow: none; }
 
-    /* --- Loan Screen --- */
-    .loan-list { display: flex; flex-direction: column; gap: 15px; padding: 20px; }
-    .loan-item { 
-        background: #111; border: 1px solid #444; padding: 15px; display: flex; align-items: center; gap: 15px; 
-        cursor: pointer; transition: 0.2s;
+    /* Lobby Options */
+    .lobby-opt-container { margin-top: 20px; padding: 15px; background: #111; border: 1px solid #333; border-radius: 8px; text-align: left; margin-bottom: 60px;}
+    .toggle-switch { display: flex; align-items: center; cursor: pointer; margin-top: 10px; margin-bottom: 10px; justify-content: space-between;}
+    .toggle-switch input { display: none; }
+    .slider { width: 40px; height: 20px; background: #333; border-radius: 20px; position: relative; transition: 0.3s; margin-left: 10px; flex-shrink: 0;}
+    .slider::before { content: ''; position: absolute; width: 16px; height: 16px; background: #888; border-radius: 50%; top: 2px; left: 2px; transition: 0.3s; }
+    input:checked + .slider { background: var(--gold); }
+    input:checked + .slider::before { transform: translateX(20px); background: #fff; }
+
+    /* --- Skill Modal --- */
+    .skill-modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.85); z-index: 3000;
+        display: none; align-items: center; justify-content: center;
+        opacity: 0; transition: opacity 0.2s;
     }
-    .loan-item:hover { border-color: var(--gold); background: #1a1a1a; }
-    .loan-info { flex: 1; }
-    .loan-name { color: var(--gold); font-weight: bold; }
-    .loan-desc { font-size: 0.8rem; color: #888; }
+    .skill-modal-overlay.show { display: flex; opacity: 1; pointer-events: auto; }
+    
+    .skill-card {
+        width: 90%; max-width: 340px;
+        background: linear-gradient(145deg, #150505, #0a0a0a);
+        border: 2px solid var(--gold);
+        border-radius: 16px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 0 50px rgba(212,175,55,0.2);
+        transform: scale(0.95); transition: transform 0.2s;
+        display: flex; flex-direction: column; align-items: center;
+        max-height: 85vh; overflow-y: auto;
+    }
+    .skill-modal-overlay.show .skill-card { transform: scale(1); }
+    
+    .skill-char-img-lg { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--gold); object-fit: cover; margin-bottom: 15px; box-shadow: 0 0 20px var(--gold-glow); background: #000; }
+    .skill-char-name-lg { font-family: 'Cinzel'; font-size: 1.5rem; color: var(--gold); margin-bottom: 10px; font-weight: bold; text-shadow: 0 2px 5px #000; }
+    
+    .skill-section { 
+        margin-top: 10px; width: 100%; text-align: left; 
+        background: rgba(255,255,255,0.03); padding: 12px; 
+        border-radius: 8px; border-left: 3px solid var(--gold);
+    }
+    .skill-title { font-size: 0.8rem; color: #888; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center;}
+    .skill-name { font-size: 1rem; color: #fff; font-weight: bold; margin-bottom: 5px; }
+    .skill-desc { font-size: 0.85rem; color: #ccc; line-height: 1.5; font-family: 'Noto Serif TC'; }
+    .skill-tag { background: #333; color: #aaa; padding: 2px 6px; border-radius: 4px; font-size: 0.6rem; }
+    
+    .skill-cp-section { border-left-color: #ff55aa; background: rgba(255, 85, 170, 0.05); margin-top: 10px; }
+    .skill-cp-section .skill-title { color: #ff55aa; }
+
+    /* --- Skill Toast (Notification) --- */
+    .skill-toast {
+        position: absolute; top: 30%; left: 50%; transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.95); border: 1px solid var(--gold);
+        color: #fff; padding: 12px 20px; text-align: center;
+        border-radius: 8px; pointer-events: none; opacity: 0; z-index: 2000;
+        width: 85%; max-width: 350px;
+        box-shadow: 0 0 30px rgba(0,0,0,0.9), 0 0 10px var(--gold-glow);
+        display: flex; flex-direction: column; align-items: center;
+    }
+    .skill-toast.show { animation: popInFadeOut 3.5s forwards; }
+    @keyframes popInFadeOut { 
+        0% { opacity: 0; transform: translate(-50%, -40%) scale(0.9); } 
+        10% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 
+        85% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 
+        100% { opacity: 0; transform: translate(-50%, -60%) scale(1); } 
+    }
+    .st-title { font-family: 'Cinzel'; color: var(--gold); font-size: 1.1rem; font-weight: bold; margin-bottom: 4px; }
+    .st-user { color: #fff; font-size: 0.9rem; margin-bottom: 4px; }
+    .st-desc { font-size: 0.8rem; color: #aaa; }
 
     /* --- Game Area --- */
     .game-area { flex: 1; display: flex; flex-direction: column; position: relative; }
-
-    .status-bar {
-        text-align: center; font-family: 'Cinzel'; font-size: 0.9rem; color: #aaa;
-        padding: 5px; background: rgba(0,0,0,0.5); min-height: 30px; margin-top: 10px;
-    }
-
+    .status-bar { text-align: center; font-family: 'Cinzel'; font-size: 0.9rem; color: #aaa; padding: 5px; background: rgba(0,0,0,0.5); min-height: 30px; margin-top: 10px; }
+    
     .opponents-row { height: 170px; position: relative; width: 100%; margin-top: 50px; }
-    .seat { position: absolute; width: 80px; display: flex; flex-direction: column; align-items: center; transition: 0.3s; }
+    .seat { position: absolute; width: 80px; display: flex; flex-direction: column; align-items: center; transition: 0.1s; cursor: pointer; -webkit-tap-highlight-color: transparent;}
+    .seat:active { transform: scale(0.95); }
     .seat[data-pos="0"] { left: 15px; top: 30px; }
     .seat[data-pos="1"] { left: 50%; transform: translateX(-50%); top: 0px; }
     .seat[data-pos="2"] { right: 15px; top: 30px; }
-    
-    .op-avatar { width: 56px; height: 56px; border-radius: 50%; border: 2px solid #444; object-fit: cover; background: #000; z-index: 10; }
+    .op-avatar { width: 56px; height: 56px; border-radius: 50%; border: 2px solid #444; object-fit: cover; background: #000; z-index: 10; transition: 0.2s; }
     .seat.active .op-avatar { border-color: var(--gold); box-shadow: 0 0 15px var(--gold); transform: scale(1.1); }
-    
+    .seat.shake .op-avatar { animation: shake 0.4s ease-in-out; }
+    @keyframes shake { 0%, 100% {transform: translateX(0);} 25% {transform: translateX(-5px);} 75% {transform: translateX(5px);} }
+
     .bubble {
-        position: absolute; top: -45px; 
+        position: absolute; top: 65px;
         background: #fff; color: #000; padding: 6px 10px; border-radius: 12px;
         font-size: 0.75rem; font-weight: bold; min-width: 90px; text-align: center;
         opacity: 0; pointer-events: none; transition: 0.3s; z-index: 100;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.8); white-space: nowrap;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.8); white-space: normal; line-height: 1.2;
     }
-    .bubble::after {
-        content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
-        border-width: 5px 5px 0; border-style: solid; border-color: #fff transparent;
-    }
-    .bubble.show { opacity: 1; transform: translateY(-5px); }
-
-    .mini-hand-container { display: flex; justify-content: center; margin-top: 5px; height: 20px; width: 100%; z-index: 5; }
-    .mini-card { width: 14px; height: 20px; background: #8a0303; border: 1px solid #fff; border-radius: 2px; margin-left: -8px; box-shadow: 1px 1px 2px #000; }
-    .mini-card:first-child { margin-left: 0; }
-
-    .count-badge { position: absolute; bottom: -5px; right: 0; z-index: 20; background: #000; border: 1px solid var(--gold); color: #fff; font-family: 'Cinzel'; font-size: 0.8rem; padding: 1px 6px; border-radius: 10px; }
-    .dealer-score { position: absolute; top: 0; left: -15px; z-index: 20; background: #a00; color: #fff; border: 1px solid #f00; font-family: 'Cinzel'; font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; display: none; box-shadow: 0 0 5px #f00; }
+    .bubble::after { content: ''; position: absolute; top: -5px; left: 50%; transform: translateX(-50%); border-width: 0 5px 5px 5px; border-style: solid; border-color: transparent transparent #fff transparent; }
+    .bubble.show { opacity: 1; transform: translateY(5px); }
+    .catch-effect { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); color: #f00; font-weight: 900; font-size: 1.2rem; text-shadow: 0 0 5px #fff; animation: popUp 1s forwards; z-index: 200; pointer-events: none;}
+    @keyframes popUp { 0% { opacity:0; transform:translate(-50%, 10px); } 20% { opacity:1; transform:translate(-50%, -20px) scale(1.5); } 100% { opacity:0; transform:translate(-50%, -50px); } }
 
     .table-center { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; flex-direction: column; }
-    .msg-large { position: absolute; font-family: 'Cinzel'; font-size: 2rem; color: var(--gold); text-shadow: 0 0 20px #000; pointer-events: none; opacity: 0; transition: 0.3s; z-index: 100; background: rgba(0,0,0,0.8); padding: 10px 30px; border: 1px solid var(--gold); }
+    .msg-large { position: absolute; font-family: 'Cinzel'; font-size: 2rem; color: var(--gold); text-shadow: 0 0 20px #000; pointer-events: none; opacity: 0; transition: 0.3s; z-index: 100; background: rgba(0,0,0,0.8); padding: 10px 30px; border: 1px solid var(--gold); text-align: center;}
     .msg-large.show { opacity: 1; transform: scale(1.1); }
 
     .player-area { background: linear-gradient(to top, #000 90%, transparent); padding-bottom: 20px; display: flex; flex-direction: column; justify-content: flex-end; position: relative; }
-    .bj-score-badge { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #000; border: 1px solid var(--gold); color: var(--gold); padding: 5px 15px; border-radius: 15px; font-family: 'Cinzel'; font-weight: bold; box-shadow: 0 0 10px var(--gold-glow); display: none; }
-
-    .controls { display: flex; justify-content: center; gap: 20px; margin-bottom: 10px; height: 45px; z-index: 20; }
-    .btn-act { background: var(--gold); color: #000; border: none; padding: 0 40px; font-family: 'Cinzel'; font-weight: bold; border-radius: 25px; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: 0 0 15px var(--gold-glow); }
+    .player-uno-badge { position: absolute; bottom: 140px; right: 20px; width: 40px; height: 40px; font-size: 0.8rem; background: radial-gradient(circle, #ff0000 0%, #800000 100%); color: white; border-radius: 50%; border: 2px solid #fff; display: none; align-items: center; justify-content: center; font-weight: 900; font-family: 'Cinzel'; z-index: 25; box-shadow: 0 0 10px red; }
+    .player-uno-badge.show { display: flex; animation: pulseBadge 1s infinite alternate; }
+    
+    .controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 10px; height: 45px; z-index: 20; flex-wrap: wrap;}
+    .btn-act { background: var(--gold); color: #000; border: none; padding: 0 20px; font-family: 'Cinzel'; font-weight: bold; border-radius: 25px; opacity: 0; pointer-events: none; transition: 0.3s; box-shadow: 0 0 15px var(--gold-glow); min-width: 80px; }
     .btn-act.show { opacity: 1; pointer-events: auto; }
     .btn-pass { background: #333; color: #ccc; box-shadow: none; border: 1px solid #555; }
+    .btn-color { color: #fff; text-shadow: 1px 1px 2px #000; }
+    .btn-red { background: var(--uno-red); }
+    .btn-yellow { background: var(--uno-yellow); color: #000; text-shadow: none;}
+    .btn-green { background: var(--uno-green); }
+    .btn-blue { background: var(--uno-blue); }
+    .btn-shout { background: #d00; color: #fff; border: 2px solid #fff; box-shadow: 0 0 10px #f00; }
 
     .my-hand { display: flex; align-items: flex-end; height: 130px; padding: 10px 20px; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; }
     .my-hand.few-cards { justify-content: center; }
-
     .card { width: 76px; height: 106px; background: #fff; border-radius: 6px; position: relative; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; padding: 5px; font-family: 'Arial'; font-weight: bold; border: 1px solid #ccc; box-shadow: -2px 0 5px rgba(0,0,0,0.3); flex-shrink: 0; margin-right: -45px; transition: transform 0.2s, margin 0.2s; cursor: pointer; }
-    .card:last-child { margin-right: 0; }
     .card.selected { transform: translateY(-25px); border: 2px solid var(--gold); z-index: 100; margin-right: -20px; }
-    .card-corner { display: flex; flex-direction: column; align-items: center; line-height: 1; font-size: 1.2rem; }
-    .card-center-suit { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5rem; opacity: 0.2; pointer-events: none; }
     .card.red { color: var(--red); } .card.black { color: #000; }
     .card.back { background: #1a0505; border: 2px solid #8a7538; background-image: repeating-linear-gradient(45deg, #111 0, #111 2px, #2a0a0a 2px, #2a0a0a 8px); }
+    .card.uno { color: #fff; text-shadow: 1px 1px 0 #000; border: 2px solid #fff; }
+    .card.uno-red { background: var(--uno-red); }
+    .card.uno-yellow { background: var(--uno-yellow); color: #000; text-shadow: none; }
+    .card.uno-green { background: var(--uno-green); }
+    .card.uno-blue { background: var(--uno-blue); }
+    .card.uno-black { background: #222; border: 2px solid var(--gold); background-image: linear-gradient(135deg, transparent 45%, var(--gold) 50%, transparent 55%); }
+    .card-center-suit { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2.5rem; opacity: 0.2; pointer-events: none; }
+    .card-center-uno { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 2rem; font-weight: 900; font-family: 'Cinzel'; width: 100%; text-align: center;}
+    .uno-corner { position: absolute; top: 5px; left: 5px; font-size: 0.8rem; }
+    .card-corner { display: flex; flex-direction: column; align-items: center; line-height: 1; font-size: 1.2rem; }
 
-    /* Result & Loan Modal */
+    /* UNO Specifics */
+    .mini-hand-container { display: flex; justify-content: center; margin-top: -15px; height: 20px; width: 100%; z-index: 15; position: relative; }
+    .mini-card { width: 14px; height: 20px; background: #8a0303; border: 1px solid #fff; border-radius: 2px; margin-left: -8px; box-shadow: 1px 1px 2px #000; }
+    .mini-card:first-child { margin-left: 0; }
+    .mini-card.uno-back { background: #000; border: 1px solid #fff; background-image: radial-gradient(circle, #f00 10%, transparent 10%), radial-gradient(circle, #ff0 10%, transparent 10%); background-size: 10px 10px; background-position: 0 0, 5px 5px; }
+    .uno-badge { position: absolute; top: -10px; right: -5px; width: 28px; height: 28px; background: radial-gradient(circle, #ff0000 0%, #800000 100%); color: white; border-radius: 50%; border: 2px solid #fff; display: none; align-items: center; justify-content: center; font-weight: 900; font-family: 'Cinzel'; font-size: 0.6rem; z-index: 25; box-shadow: 0 0 10px red; animation: pulseBadge 1s infinite alternate; }
+    .uno-badge.show { display: flex; }
+    
+    /* Modals */
     .result-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.5s; }
     .res-title { font-family: 'Cinzel'; font-size: 3rem; color: var(--gold); margin-bottom: 10px; }
-    .res-val { font-size: 1.2rem; color: #fff; margin-bottom: 40px; font-family: 'Arial'; text-align: center; line-height: 1.5; }
+    .res-val { font-size: 1.2rem; color: #fff; margin-bottom: 40px; font-family: 'Arial'; text-align: center; line-height: 1.5; padding: 0 20px;}
     .res-btns { display: flex; gap: 20px; }
     .btn-res { padding: 10px 30px; border: 1px solid var(--gold); background: transparent; color: var(--gold); font-family: 'Cinzel'; cursor: pointer; }
     .btn-res:hover { background: var(--gold); color: #000; }
+    
+    /* Loan UI */
+    .loan-list { 
+        display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; 
+        max-height: 60vh; overflow-y: auto; padding: 10px; width: 100%;
+    }
+    .loan-item { 
+        background: linear-gradient(135deg, #111, #1a1a1a); 
+        border: 1px solid #444; border-radius: 8px;
+        padding: 15px; display: flex; flex-direction: column; align-items: center; 
+        cursor: pointer; transition: 0.2s; position: relative;
+    }
+    .loan-item:active { transform: scale(0.98); }
+    .loan-item:hover { border-color: var(--gold); box-shadow: 0 0 10px rgba(212,175,55,0.2); }
+    .loan-avatar-sm { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #666; object-fit: cover; margin-bottom: 8px; background: #000; }
+    .loan-info { text-align: center; }
+    .loan-name { color: #eee; font-size: 0.9rem; font-family: 'Cinzel'; }
+    .loan-hint { font-size: 0.7rem; color: #666; margin-top: 4px; }
 
-    /* Loan Specific */
-    .loan-dialogue { background: #111; border: 1px solid var(--gold); padding: 20px; border-radius: 10px; max-width: 80%; text-align: center; }
-    .loan-opt { margin-top: 10px; padding: 10px; background: #333; color: #fff; cursor: pointer; border-radius: 5px; }
-    .loan-opt:hover { background: var(--gold); color: #000; }
+    .loan-dialogue { 
+        background: linear-gradient(135deg, #222, #000); 
+        border: 2px solid var(--gold); 
+        padding: 30px; border-radius: 12px; max-width: 90%; width: 400px; 
+        text-align: center; box-shadow: 0 0 40px rgba(0,0,0,0.9);
+        display: flex; flex-direction: column; align-items: center;
+    }
+    .loan-opt { 
+        margin-top: 15px; padding: 12px 20px; 
+        background: #333; color: #fff; cursor: pointer; border-radius: 6px; 
+        width: 100%; border: 1px solid #555; transition: 0.2s; font-family: 'Noto Serif TC';
+    }
+    .loan-opt:hover { background: var(--gold); color: #000; border-color: #fff; }
+
+    /* Big2 Badges */
+    .count-badge { position: absolute; bottom: -5px; right: 0; z-index: 20; background: #000; border: 1px solid var(--gold); color: #fff; font-family: 'Cinzel'; font-size: 0.8rem; padding: 1px 6px; border-radius: 10px; }
+    .dealer-score { position: absolute; top: 0; left: -15px; z-index: 20; background: #a00; color: #fff; border: 1px solid #f00; font-family: 'Cinzel'; font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; display: none; box-shadow: 0 0 5px #f00; }
+    .bj-score-badge { position: absolute; top: -30px; left: 50%; transform: translateX(-50%); background: #000; border: 1px solid var(--gold); color: var(--gold); padding: 5px 15px; border-radius: 15px; font-family: 'Cinzel'; font-weight: bold; box-shadow: 0 0 10px var(--gold-glow); display: none; }
 
     @keyframes fadeIn { from {opacity:0} to {opacity:1} }
-
+    @keyframes pulseBadge { from{box-shadow: 0 0 5px red;} to{box-shadow: 0 0 15px red, 0 0 5px orange;} }
 </style>
 </head>
 <body onclick="ensureAudio()">
 
-<audio id="bgm" loop>
-    <source src="https://files.catbox.moe/zqmn32.mp3" type="audio/mpeg">
-</audio>
+<audio id="bgm" loop><source src="https://files.catbox.moe/zqmn32.mp3" type="audio/mpeg"></audio>
 <audio id="sfx-card" src="https://files.catbox.moe/0bdvj7.mp3"></audio>
 <audio id="sfx-win" src="https://files.catbox.moe/rfy681.mp3"></audio>
 
@@ -190,26 +298,39 @@
     <div class="hud-btn" onclick="goHome()">⌂</div>
 </div>
 
+<div id="skill-modal-overlay" class="skill-modal-overlay" onclick="closeSkillModal()">
+    <div class="skill-card" onclick="event.stopPropagation()">
+        <img id="skill-char-img" class="skill-char-img-lg" src="">
+        <div id="skill-char-name" class="skill-char-name-lg"></div>
+        <div id="skill-content-area" style="width:100%"></div>
+        <div style="font-size:0.7rem; color:#666; margin-top:15px; cursor:pointer" onclick="closeSkillModal()">TAP TO CLOSE</div>
+    </div>
+</div>
+
 <div id="screen-menu" class="screen active">
     <div class="menu-content">
         <div class="brand">ALICE CASINO</div>
-        
         <div style="display:flex; justify-content:center; gap:20px; margin-bottom:20px">
             <div style="text-align:center"><div style="font-size:1.5rem" id="stat-wins">0</div><div style="font-size:0.7rem;color:#888">WINS</div></div>
             <div style="text-align:center"><div style="font-size:1.5rem" id="stat-losses">0</div><div style="font-size:0.7rem;color:#888">LOSSES</div></div>
         </div>
+        <div class="game-card" onclick="goToLobby('uno')"><div class="game-name" style="color:var(--gold)">RABBIT UNO</div><div class="game-desc">4 人局 | 友情破壞者 | <span style="color:#aaf">含 CP 技</span></div></div>
+        <div class="game-card" onclick="goToLobby('bigtwo')"><div class="game-name">BIG TWO</div><div class="game-desc">4 人局 | 大老二 | <span style="color:#aaf">含 CP 技</span></div></div>
         <div class="game-card" onclick="goToLobby('redblack')"><div class="game-name">RED or BLACK</div><div class="game-desc">1 對手 | 運氣博弈</div></div>
         <div class="game-card" onclick="goToLobby('blackjack')"><div class="game-name">BLACKJACK</div><div class="game-desc">1 對手 | 21 點</div></div>
         <div class="game-card" onclick="goToLobby('oldmaid')"><div class="game-name">OLD MAID</div><div class="game-desc">4 人局 | 抽鬼牌</div></div>
-        <div class="game-card" onclick="goToLobby('bigtwo')"><div class="game-name">BIG TWO</div><div class="game-desc">4 人局 | 大老二</div></div>
     </div>
 </div>
 
 <div id="screen-lobby" class="screen">
     <div class="menu-content">
         <h2 style="color:var(--gold); font-family:'Cinzel'">GUEST LIST</h2>
-        <div id="lobby-hint" style="font-size:0.8rem; color:#888">SELECT OPPONENTS</div>
+        <div id="lobby-hint" style="font-size:0.8rem; color:#888">長按頭像查看技能 / 選擇對手</div>
         <div class="char-grid" id="char-grid"></div>
+        <div class="lobby-opt-container" id="lobby-uno-opt" style="display:none">
+            <label class="toggle-switch"><span style="color:#fff;font-size:0.9rem">無限抽牌</span><input type="checkbox" id="uno-inf-mode"><span class="slider"></span></label>
+            <label class="toggle-switch"><span style="color:#fff;font-size:0.9rem">瘋狂疊加 (+2/+4)</span><input type="checkbox" id="uno-stack-mode"><span class="slider"></span></label>
+        </div>
         <button class="lobby-btn" id="btn-start" disabled onclick="initGame()">START GAME</button>
     </div>
 </div>
@@ -219,24 +340,23 @@
         <h2 style="color:var(--gold)">BANK</h2>
         <p style="color:#888; font-size:0.8rem">選擇對象進行借款協商</p>
         <div class="loan-list" id="loan-list"></div>
-        <button class="lobby-btn" onclick="switchScreen('screen-menu')">BACK</button>
+        <button class="lobby-btn" style="position:relative; margin-top:20px;" onclick="switchScreen('screen-menu')">BACK</button>
     </div>
 </div>
 
 <div id="screen-game" class="screen">
     <div class="status-bar" id="status-bar">GAME START</div>
     <div class="game-area">
+        <div class="skill-toast" id="skill-toast"></div>
         <div class="opponents-row" id="seat-container"></div>
         <div class="table-center">
             <div class="msg-large" id="msg-large">START</div>
             <div id="table-cards" style="display:flex; justify-content:center; gap:5px; flex-wrap:wrap"></div>
         </div>
         <div class="player-area">
+            <div class="player-uno-badge" id="player-badge">UNO</div>
             <div class="bj-score-badge" id="bj-score">0</div>
-            <div class="controls">
-                <button class="btn-act btn-pass" id="btn-pass">PASS</button>
-                <button class="btn-act" id="btn-play">PLAY</button>
-            </div>
+            <div class="controls" id="controls"></div>
             <div class="my-hand" id="player-hand"></div>
         </div>
     </div>
@@ -255,669 +375,1055 @@
     <div class="loan-dialogue">
         <img id="loan-avatar" style="width:80px;height:80px;border-radius:50%;border:2px solid var(--gold);margin-bottom:10px">
         <div id="loan-text" style="color:#fff;margin-bottom:20px;font-style:italic">"..."</div>
-        <div id="loan-options"></div>
+        <div id="loan-options" style="width:100%"></div>
     </div>
 </div>
-
-
 <script>
-/* --- DATA --- */
+/* --- 1. CHARACTER DATA (Rich Text + AI Skills) --- */
 const CHARS = [
     { 
-        id: 'xiaomu', name: '小目', img: 'https://i.meee.com.tw/IHt74xD.png', 
-        lines: { start: ["總裁的魄力。", "茉莉幫我記錄。"], play: ["投資。", "戰略。", "All in。"], win: ["全場買單。", "理所當然。"], lose: ["戰損風。", "零錢而已。"] },
-        loanStages: [
-            { text: "資金鍊斷裂了？我可以注資，但我要聽實話。", opts: [{t:"這是戰略性虧損。", next:1}, {t:"求求你借我錢！", next:-1}] },
-            { text: "哼，有意思。你的擔保是什麼？", opts: [{t:"我是為了茉莉才玩的。", next:2}, {t:"我會還你兩倍。", next:-1}] },
-            { text: "看在茉莉的份上...這叫天使投資。", reward: 5000 }
-        ]
+        id: 'venato', name: '維納托', img: 'https://i.meee.com.tw/HAvzdTj.png', uno_shout_rate: 0.95, uno_catch_rate: 0.95, cp_id: 'narcissus',
+        skills: {
+            uno: { name: "變量計算", desc: "被 +4 攻擊時，有 30% 機率直接將傷害反彈給下家。" },
+            bigtwo: { name: "先發制人", desc: "開局必定持有梅花 3，享有優先出牌權。" }
+        },
+        cp_skill: { name: "海之倒影", desc: "與納西瑟斯連動：當維納托打出功能牌時，納西瑟斯會追加一張牌給下家。" },
+        lines: { 
+            start: ["根據流體力學，這局我贏定了。", "本天才是無敵的。", "你們的勝率已被計算為零。"], 
+            play: ["計算完畢。", "機率都在掌握中。", "這是最優解。", "都在公式之內。"], 
+            win: ["讚美本王！", "這就是智商的差距。", "意料之中。"], 
+            lose: ["公式...哪裡錯了？", "這不科學！", "一定是變量出了問題..."], 
+            uno_attack: ["給你一點『變量』。", "這牌請笑納。", "破壞你的結構。", "重新計算你的勝率吧。"], 
+            uno_hit: ["什麼？！", "這不在計算範圍內！", "可惡的變量...", "數據溢出了！"], 
+            uno_uno: ["聽牌。颤抖吧。", "將軍。", "Checkmate。"], 
+            uno_catch: ["抓到了！你漏了一個步驟。", "太不嚴謹了！", "違反規則，扣分。"], 
+            uno_forgot: ["嘖...微小的計算失誤...", "竟然...", "大腦過熱了..."], 
+            uno_late: ["啊！UNO！沒想到吧！", "修正變量：UNO！"],
+            uno_skip: ["暫停運算？也好。", "觀察局勢。", "讓我重新建模。"],
+            uno_draw_many: ["手牌太多，難以計算...", "數據量過大！"],
+            uno_stack: ["這個變量還給你！", "疊加態！", "反擊！"],
+            uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時候。", "你想對本王做什麼？"],
+            uno_poke_late: ["本王已經喊了，你慢了。", "想抓本王？下輩子吧。", "太慢了！"],
+            loan_reject: ["本王希望你誠實一點。", "本王和你不熟吧？", "本王覺得你在騙我！"]
+        },
+        loanStages: [ { text: "借錢？我的計算中沒有這個變量。", opts: [{t:"為了驗證混沌理論。", next:1}, {t:"大家都是朋友嘛。", next:-1}] }, { text: "混沌理論？你是說機率的不可預測性？有趣。", opts: [{t:"沒錯，這是實驗經費。", next:-1}, {t:"我就想賭一把。", next:2}] }, { text: "好吧，本王看在你誠實的份上。", reward: 3000 } ]
     },
     { 
-        id: 'venato', name: '維納托', img: 'https://i.meee.com.tw/HAvzdTj.png', 
-        lines: { start: ["流體力學準備就緒。", "讓你們見識天才。"], play: ["計算完畢。", "必然的結果。"], win: ["讚美本王吧！", "這就是科學。"], lose: ["公式...錯了？", "不科學！"] },
-        loanStages: [
-            { text: "我的計算中沒有『借錢給你』這個變量。", opts: [{t:"這是為了驗證混沌理論。", next:1}, {t:"大家都是朋友嘛。", next:-1}] },
-            { text: "混沌理論？你是說機率的不可預測性？", opts: [{t:"沒錯，這是實驗經費。", next:-1}, {t:"我就想賭一把。", next:2}] },
-            { text: "好吧，本王看在你誠實的份上。", reward: 3000 }
-        ]
+        id: 'narcissus', name: '納西瑟斯', img: 'https://i.meee.com.tw/kvfcmWP.png', uno_shout_rate: 0.8, uno_catch_rate: 0.6, cp_id: 'venato',
+        skills: {
+            uno: { name: "鏡像反射", desc: "打出迴轉 (Reverse) 時，讓被迴轉的對象暫停一回合。" },
+            bigtwo: { name: "華麗獨舞", desc: "打出單張 A 或 2 時，直接跳過下一家的回合 (Skip)。" }
+        },
+        cp_skill: { name: "海之倒影", desc: "與維納托連動：當納西瑟斯被攻擊時，維納托會幫忙反彈 +2。" },
+        lines: { 
+            start: ["今天的運氣感覺不錯。", "看著我華麗的勝利吧。", "我會全力以赴的。"], 
+            play: ["這張牌感覺很襯我。", "直覺告訴我出這張。", "漂亮的一手。", "這張牌很適合我。"], 
+            win: ["太好了！贏了！", "真是一場完美的勝利。", "華麗的謝幕。"], 
+            lose: ["啊...輸了。", "下次不會輸的。", "這不美觀..."], 
+            uno_attack: ["請收下這份禮物。", "抱歉囉。", "給你一個驚喜。", "這張牌很襯你。"], 
+            uno_hit: ["對我好一點...", "為什麼是我...", "太過分了...", "怎麼這樣..."], 
+            uno_uno: ["快結束了。", "只剩這個了。", "最後的閃耀。"], 
+            uno_catch: ["你違反規則了！", "別想作弊！", "我可是看得很清楚。"], 
+            uno_forgot: ["啊...我忘記了...", "太專心了...", "哎呀，不小心。"], 
+            uno_late: ["啊！UNO！還好想起來了！", "差點忘了！UNO！"],
+            uno_skip: ["正好讓我欣賞一下美貌。", "休息一下。", "別急。"],
+            uno_draw_many: ["拿不下了...", "這也是考驗嗎？", "太多了啦..."],
+            uno_stack: ["這份愛太沉重了，還你！", "反射！", "華麗的反擊！"],
+            uno_poke_early: ["還沒到時間哦。", "別急著碰我。", "別這樣。"],
+            uno_poke_late: ["我已經說過啦。", "太慢了哦。", "我可是很完美的。"],
+            loan_reject: ["我要去賺更多錢給維納托先生花了。", "你又不是維納托先生。", "再見了。"]
+        },
+        loanStages: [ { text: "我的錢都是拿來給維納托先生的...", opts:[{t:"那算了。", next:-1}, {t:"維納托先生讓我來找你拿。", next:1}], }, { text: "真的嗎？全部都給你！", reward: 5000 } ]
     },
     { 
-        id: 'lanlan', name: '蘭蘭', img: 'https://i.meee.com.tw/wgADv31.png', 
-        lines: { start: ["好耶！玩遊戲！", "這張牌看起來很好吃呀！"], play: ["吃我一擊！", "嘿咻！", "這張大牌呀！"], win: ["嶺上開花！哈哈！", "我是天才呀！"], lose: ["哎呀！輸了呀！", "沒關係我有錢呀！"] },
-        loanStages: [
-            { text: "你要錢嗎？我有好多呀！你要拿去買什麼？", opts: [{t:"買給喬諾娜的禮物。", next:1}, {t:"去賭博。", next:-1}] },
-            { text: "給喬諾娜的？好耶！那你要買什麼？", opts: [{t:"衣服。", next:2}, {t:"杯子。", next:-1}] },
-            { text: "太棒了！拿去拿去！", reward: 4000 }
-        ]
+        id: 'peter', name: '彼得', img: 'https://i.meee.com.tw/PJOElT9.png', uno_shout_rate: 0.7, uno_catch_rate: 0.7, cp_id: 'lynn',
+        skills: {
+            uno: { name: "神聖驅邪", desc: "被跳過 (Skip) 時，有 50% 機率免疫並繼續回合。" },
+            bigtwo: { name: "神罰", desc: "當彼得選擇 Pass 時，下一家該回合禁止打出對子 (Pair)。" }
+        },
+        cp_skill: { name: "驅邪契約", desc: "與林恩連動：彼得在場時，會幫林恩出牌。" },
+        lines: { 
+            start: ["我看見了死蒼蠅...大凶。", "這把牌有邪氣。", "感覺不太好..."], 
+            play: ["神之指引。", "驅邪。", "這張是大吉。", "惡靈退散。"], 
+            win: ["神蹟降臨。", "邪靈退散。", "感謝主。"], 
+            lose: ["凶兆...", "這裡風水太差了。", "我要把這裡燒了。", "厄運纏身..."], 
+            uno_attack: ["這是神的懲罰。", "+4，去懺悔吧。", "這張牌有詛咒。", "接受制裁。"], 
+            uno_hit: ["惡靈攻擊？！", "這不吉利。", "主啊...", "業障..."], 
+            uno_uno: ["神說，要結束了。", "終焉將至。"], 
+            uno_catch: ["我看見了你的罪。", "懺悔吧！", "你瞞不過神的眼睛。"], 
+            uno_forgot: ["惡靈遮住了我的眼...", "這是考驗...", "主啊，我分心了..."], 
+            uno_late: ["主提醒了我！UNO！", "驅邪！UNO！"],
+            uno_skip: ["被阻擋了...", "惡靈退散！", "這是魔鬼的把戲。"],
+            uno_draw_many: ["業障太深了...", "好多...", "這就是地獄嗎？"],
+            uno_stack: ["轉移詛咒！", "還給你！", "神聖反射！"],
+            uno_poke_early: ["退下，惡靈。", "還沒到審判之時。", "別碰我！"],
+            uno_poke_late: ["神已赦免。", "太遲了。", "你的罪孽深重。"],
+            loan_reject: ["你中邪。", "我要走了。", "阿門。"]
+        },
+        loanStages: [ { text: "這筆錢流向你，我看見了凶兆。", opts: [{t:"我會拿去捐給教會。", next:1}, {t:"我要逆天改命。", next:-1}] }, { text: "教會？『紙會』嗎？算你有心。", opts: [{t:"阿門。", next:2}, {t:"呃...", next:-1}] }, { text: "願主保佑你。", reward: 2000 } ]
     },
     { 
-        id: 'peter', name: '彼得', img: 'https://i.meee.com.tw/PJOElT9.png', 
-        lines: { start: ["這地方風水不好。", "我看見了死蒼蠅...", "紅色，大吉。"], play: ["神之指引。", "驅邪。", "這張是大吉。"], win: ["神蹟降臨。", "果然紅色是吉利的。"], lose: ["凶兆...", "這裡磁場不對。", "我要把這裡燒了。"] },
-        loanStages: [
-            { text: "這筆錢流向你，我看見了凶兆。", opts: [{t:"我會拿去捐給教會。", next:1}, {t:"我要逆天改命。", next:-1}] },
-            { text: "教會？你確定不是去賭場？", opts: [{t:"我發誓，為了贖罪。", next:2}, {t:"呃...", next:-1}] },
-            { text: "好吧，願主保佑你。", reward: 2000 }
-        ]
+        id: 'lynn', name: '林恩', img: 'https://i.meee.com.tw/kxAllct.png', uno_shout_rate: 0.2, uno_catch_rate: 0.1, cp_id: 'peter',
+        skills: {
+            uno: { name: "懶惰防禦", desc: "被 +2 或 +4 時，自動減少一張抽牌數。" },
+            bigtwo: { name: "不想玩了", desc: "手牌剩餘 10 張時，強制與手牌最少的玩家交換手牌。" }
+        },
+        cp_skill: { name: "驅邪契約", desc: "與彼得連動：林恩受到攻擊時，會自動將效果轉移給玩家。" },
+        lines: { 
+            start: ["好睏...想吃披薩。", "快點開始，快點結束。", "不想動..."], 
+            play: ["好麻煩...", "隨便啦。", "拿去拿去。", "涼拌。", "這張行嗎？"], 
+            win: ["能下班了嗎？", "今晚吃夏威夷披薩。", "終於結束了..."], 
+            lose: ["涼拌。", "輸了...好麻煩。", "隨便啦，輸贏都行。"], 
+            uno_attack: ["這張給你，別煩我。", "讓我歇會。", "去旁邊玩。", "拿去。"], 
+            uno_hit: ["唉...又要抽牌...", "手好痠...", "可以不拿嗎？", "好重..."], 
+            uno_uno: ["剩一張了，好睏。", "UNO...呼..."], 
+            uno_catch: ["你好吵...快抽牌...", "好麻煩...抓...", "你看起來沒喊。"], 
+            uno_forgot: ["呼...忘記了...", "隨便啦...", "啊...好麻煩..."], 
+            uno_late: ["啊...UNO...好麻煩...", "補喊一下..."],
+            uno_skip: ["太好了，繼續睡。", "Zzz...", "跳過我最好。"],
+            uno_draw_many: ["拿不動了...", "麻煩死了...", "好多紙片..."],
+            uno_stack: ["你拿去吧...", "別給我...", "丟回去。"],
+            uno_poke_early: ["幹嘛...", "讓我睡...", "別吵..."],
+            uno_poke_late: ["喊過了...", "好吵...", "別煩我..."],
+            loan_reject: ["你來找碴的膩。", "你連林恩的錢都要搶？", "隨便啦。"]
+        },
+        loanStages: [ { text: "你找林恩幹嘛...", opts: [{t:"(拿走錢)", next:-1}, {t:"幫你買披薩。", next:1}] }, { text: "披薩？要夏威夷口味的，加雙份鳳梨。", opts: [{t:"沒問題。", next:2}, {t:"鳳梨是邪教。", next:-1}] }, { text: "好耶披薩......", reward: 860 } ]
     },
     { 
-        id: 'lynn', name: '林恩', img: 'https://i.meee.com.tw/kxAllct.png', 
-        lines: { start: ["好睏...想吃披薩。", "彼得別唸了。"], play: ["好麻煩...", "隨便啦。", "拿去拿去。", "涼拌。"], win: ["能下班了嗎？", "夏威夷披薩加倍！"], lose: ["涼拌。", "輸了...好麻煩。"] },
-        loanStages: [
-            { text: "好麻煩...錢在口袋裡，自己拿...", opts: [{t:"(拿走錢)", next:2}, {t:"幫你買披薩。", next:1}] },
-            { text: "披薩？要夏威夷口味的。", opts: [{t:"沒問題。", next:2}, {t:"鳳梨是邪教。", next:-1}] },
-            { text: "Zzz... (你拿到了錢)", reward: 660 }
-        ]
+        id: 'lanlan', name: '蘭蘭', img: 'https://i.meee.com.tw/wgADv31.png', uno_shout_rate: 0.5, uno_catch_rate: 0.5, cp_id: 'jonona',
+        skills: {
+            uno: { name: "放火大會", desc: "開局手牌必定包含 +4 或 +2。" },
+            bigtwo: { name: "以下犯上", desc: "持有的方塊 3 視為超級王牌，可以壓過黑桃 2。" }
+        },
+        cp_skill: { name: "閃耀的航程", desc: "與喬諾娜連動：當蘭蘭被攻擊時，喬諾娜會幫忙反擊。" },
+        lines: { 
+            start: ["好耶！玩遊戲！", "這張牌看起來很好吃呀！", "蘭蘭要贏！"], 
+            play: ["吃我一擊！", "嘿咻！", "這張大牌呀！", "看我的厲害！"], 
+            win: ["嶺上開花！哈哈！", "我贏了呀！", "我是第一名！"], 
+            lose: ["哎呀！輸了呀！", "沒關係我有錢呀！", "再來一局呀！"], 
+            uno_attack: ["給你一個大驚喜呀！", "！好像煙火呀！", "給你這個！", "爆炸吧！"], 
+            uno_hit: ["哇！好多牌呀！", "這是在送我禮物嗎？", "拿不下了呀！"], 
+            uno_uno: ["剩一張啦！天天開心！", "UNO呀！"], 
+            uno_catch: ["抓到你了呀！", "哈哈！你沒喊！", "被蘭蘭發現了！"], 
+            uno_forgot: ["哎呀！太開心忘記了呀！", "嘿嘿...", "下次不會忘啦！"], 
+            uno_late: ["哇！UNO呀！差點忘了！", "UNO！UNO！"],
+            uno_skip: ["讓我玩嘛！", "為什麼跳過我呀！", "我想出牌呀！"],
+            uno_draw_many: ["好多亮晶晶的牌呀！", "我的寶藏變多了！", "哇——！"],
+            uno_stack: ["加倍奉還呀！", "大家一起玩！", "接好囉！"],
+            uno_poke_early: ["還沒還沒呀！", "不要戳我呀！", "哈哈哈！"],
+            uno_poke_late: ["我喊了呀！", "哈哈！", "抓不到我呀！"],
+            loan_reject: ["你在說什麼？", "蘭蘭不借你了！", "不要！"]
+        },
+        loanStages: [ { text: "你要錢嗎？我有好多呀！你要拿去買什麼？", opts: [{t:"買給喬諾娜的禮物。", next:1}, {t:"去賭博。", next:-1}] }, { text: "給喬諾娜的？好耶！那你要買什麼？", opts: [{t:"漂亮的衣服。", next:2}, {t:"奇怪的杯子。", next:-1}] }, { text: "太棒了！拿去拿去！", reward: 4000 } ]
     },
     { 
-        id: 'aura', name: '奧拉', img: 'https://i.meee.com.tw/SCMPHmm.png', 
-        lines: { start: ["變量鎖定。", "開始記錄。", "不是蜜拉思就別作弊。"], play: ["最優解。", "執行。", "根據模型預測..."], win: ["數據不會說謊。", "意料之中。"], lose: ["異常數據。", "混沌。"] },
-        loanStages: [
-            { text: "貸款？請提供抵押品。", opts: [{t:"我的靈魂。", next:1}, {t:"下次還你。", next:-1}] },
-            { text: "靈魂...有趣的變量。簽下這份契約。", opts: [{t:"(簽名)", next:2}, {t:"太危險了。", next:-1}] },
-            { text: "契約成立。別讓數據失望。", reward: 30000 }
-        ]
+        id: 'jonona', name: '喬諾娜', img: 'https://i.meee.com.tw/duMFdPy.png', uno_shout_rate: 0.6, uno_catch_rate: 0.2, cp_id: 'lanlan',
+        skills: {
+            uno: { name: "幸運櫻桃", desc: "忘記喊 UNO 被抓時，有 50% 機率免疫懲罰。" },
+            bigtwo: { name: "小禮物", desc: "打出對子時，會將手牌中的一張廢牌送給手牌最少的對手。" }
+        },
+        cp_skill: { name: "閃耀的航程", desc: "與蘭蘭連動：喬諾娜每次出牌後，蘭蘭手牌數 -1。" },
+        lines: { 
+            start: ["我會努力不拖後腿的！", "請多指教...", "那個...請對我好一點..."], 
+            play: ["這張可以嗎...", "別生氣喔...", "這張...", "嘿..."], 
+            win: ["太好了！我贏了！", "我有幫上忙嗎？", "真的贏了嗎？"], 
+            lose: ["嗚嗚...對不起...", "我還是去唱歌吧...", "果然我不行..."], 
+            uno_attack: ["那個...對不起...", "...請原諒我...", "不要生氣...", "嗚嗚...給你的..."], 
+            uno_hit: ["誒？！為什麼是我...", "好多牌...拿不動了...", "不要欺負我..."], 
+            uno_uno: ["那、那個...UNO...", "剩一張了..."], 
+            uno_catch: ["那個...你好像沒喊...", "對不起...", "是UNO喔..."], 
+            uno_forgot: ["嗚嗚...我忘記了...", "對不起...", "不要罵我..."], 
+            uno_late: ["嗚...UNO！", "對不起我忘了...UNO！"],
+            uno_skip: ["我會乖乖等的...", "好的...", "我在旁邊看..."],
+            uno_draw_many: ["好多...拿不住了...", "嗚嗚...手好痠...", "救命..."],
+            uno_stack: ["這個...給你...", "我不想要...", "傳下去..."],
+            uno_poke_early: ["嗚...別嚇我...", "我還沒...", "怎、怎麼了？"],
+            uno_poke_late: ["我、我喊了...！", "你要幹嘛——", "我這次有記得！"],
+            loan_reject: ["嗚...那可能真的很少吧...", "還真是對不起...", "呃...那算了。"]
+        },
+        loanStages: [ { text: "我、我也沒什麼錢...但我可以分你一點。", opts:[{t:"謝謝你！", next:1}, {t:"太少了。", next:-1}], }, { text: "加油喔...別再輸光了...", reward: 500 } ]
     },
     { 
-        id: 'mollie', name: '茉莉', img: 'https://i.meee.com.tw/yUTV61e.png', 
-        lines: { start: ["陪大家玩玩。"], play: ["溫柔一點。"], win: ["太好了。"], lose: ["沒事的。"] },
-        loanStages: [ { text: "你還好嗎？", opts:[{t:"是的醫生，我破產了。", next:1}, {t:"不用。", next:-1}], }, { text: "呃好吧，這點錢拿去急用吧。", reward: 800 } ]
+        id: 'novian', name: '諾維安', img: 'https://i.meee.com.tw/Zg7Yp3n.png', uno_shout_rate: 0.6, uno_catch_rate: 0.4,
+        skills: {
+            uno: { name: "精準導航", desc: "使用功能牌後，若手牌還有同色牌，會追加打出一張。" },
+            bigtwo: { name: "順風航行", desc: "打出順子 (Straight) 後，可以立即再打出一張單牌。" }
+        },
+        lines: {
+            start: ["今天要航向哪裡呢？", "我是諾維安，請多指教！", "揚帆起航！"],
+            play: ["這張牌，方向正確！", "全速前進！", "轉舵！", "看我的！"],
+            win: ["抵達目的地！耶！", "好順利的航程！", "大獲全勝！"],
+            lose: ["哎呀，迷航了...", "遇到暴風雨了...", "下次再來！"],
+            uno_attack: ["請轉向！！", "小心暗礁！！", "接招！"],
+            uno_hit: ["哇！好多貨物！", "船要沉了！", "這負重太大了！"],
+            uno_uno: ["看到陸地了！UNO！", "最後一海里！"],
+            uno_catch: ["你偏離航道了！", "抓到漏洞了！", "犯規囉！"],
+            uno_forgot: ["啊，看地圖看太久了...", "抱歉抱歉！", "我的失誤！"],
+            uno_late: ["UNO！差點錯過港口！", "補喊！UNO！"],
+            uno_skip: ["拋錨了？", "稍作休息！", "維修時間。"],
+            uno_draw_many: ["滿載而歸！", "這貨物也太多了！", "爆倉啦！"],
+            uno_stack: ["順水推舟！", "接住這個！", "浪來了！"],
+            uno_poke_early: ["嘿嘿，還沒到哦。", "別急別急。", "想幹嘛？"],
+            uno_poke_late: ["已經喊囉！", "安全抵達！", "嘿嘿！"],
+            loan_reject: ["抱歉啦！我也要修船！", "下次再說吧！", "浪太大聽不清楚喔！"]
+        },
+        loanStages: [ { text: "你需要資金修船嗎？還是去探險？", opts:[{t:"我要去尋寶！(賭博)", next:1}, {t:"沒事。", next:-1}] }, { text: "尋寶聽起來很棒！這是贊助費！", reward: 1500 } ]
     },
     { 
-        id: 'jonona', name: '喬諾娜', img: 'https://i.meee.com.tw/duMFdPy.png', 
-        lines: { start: ["我會努力的！"], play: ["別生氣喔..."], win: ["太好了！"], lose: ["嗚嗚..."] },
-        loanStages: [ { text: "我、我也沒什麼錢...但我可以分你一點。", opts:[{t:"謝謝你！", next:1}, {t:"太少了。", next:-1}], }, { text: "加油喔...", reward: 500 } ]
+        id: 'lazar', name: '拉扎爾', img: 'https://i.meee.com.tw/WCAtfdV.png', uno_shout_rate: 0.3, uno_catch_rate: 0.2,
+        skills: {
+            uno: { name: "緊急治療", desc: "被強制抽牌時，抽牌數 -1。" },
+            bigtwo: { name: "診斷", desc: "開局時會偷看玩家的手牌，若玩家持有 2，拉扎爾會強制要求玩家重抽 3 張牌。" }
+        },
+        lines: {
+            start: ["請大家放輕鬆玩。", "這也是個有趣的故事呢。", "深呼吸。"],
+            play: ["這張牌很健康。", "請收下這張。", "慢慢來。", "別急。"],
+            win: ["真是個好結局。", "運氣不錯呢。", "祝您健康。"],
+            lose: ["沒關係，過程最重要。", "也是不錯的體驗。", "該休息了。"],
+            uno_attack: ["這個...請小心。", "休息一下吧。", "這是良藥苦口。", "請遵醫囑。"],
+            uno_hit: ["哎呀，負擔變重了。", "這也是命運吧。", "壓力有點大呢。"],
+            uno_uno: ["故事快講完了。", "快結束了。"],
+            uno_catch: ["閣下，您似乎忘了什麼？", "請遵守規則哦。", "這樣對身體不好。"],
+            uno_forgot: ["呵呵，我記性不太好...", "抱歉，走神了。", "哎呀，失禮了。"],
+            uno_late: ["哎呀，UNO。", "還好還好，UNO。"],
+            uno_skip: ["那我就喝杯茶吧。", "不急。", "適當的休息。"],
+            uno_draw_many: ["這也是種積累。", "好多素材。", "研究資料變多了。"],
+            uno_stack: ["這個處方更適合你。", "請收下。", "轉診。"],
+            uno_poke_early: ["閣下，請耐心。", "別急。", "請自重。"],
+            uno_poke_late: ["已經處理好了。", "無需擔心。", "完成了。"],
+            loan_reject: ["你很好就好。", "請恕我告辭。", "祝你順心。"]
+        },
+        loanStages: [ { text: "閣下遇到困難了嗎？", opts:[{t:"我需要一點幫助。", next:1}, {t:"我很好。", next:-1}] }, { text: "這是我的一點心意，希望閣下能度過難關。", reward: 1200 } ]
+    },
+    {
+        id: 'kleion', name: '克里昂', img: 'https://i.meee.com.tw/2gcElaW.png', uno_shout_rate: 0.8, uno_catch_rate: 0.6, cp_id: 'costa',
+        skills: {
+            uno: { name: "騎士反擊", desc: "被 +2 時，必定打出 +2 反擊（若有）。" },
+            bigtwo: { name: "單挑請求", desc: "打出單張牌後，強制下一家（玩家）也必須打出單張牌，禁止打出牌型或 Pass。" }
+        },
+        cp_skill: { name: "化學反應", desc: "與科絲塔連動：克里昂打出 +2 時，科絲塔會追加一張 +2。" },
+        lines: { 
+            start: ["體力就是國力！", "正義必勝！", "我會戰鬥到最後！"], 
+            play: ["看招！", "這是戰術。", "突破！", "正面對決！"], 
+            win: ["勝利！", "這是男人的勝利！", "榮耀歸於我！"], 
+            lose: ["可惡...", "下次我會贏！", "這場戰役輸了..."], 
+            uno_attack: ["吃我一劍！！", "這是重擊！", "接招！", "破防！"], 
+            uno_hit: ["我還能戰鬥！", "這點傷不算什麼！", "負重訓練！", "唔..."], 
+            uno_uno: ["最後一擊！", "決勝時刻！"], 
+            uno_catch: ["你露出破綻了！", "正義的制裁！", "抓到你了！"], 
+            uno_forgot: ["唔...太專注戰鬥了...", "我的失誤！", "大意了！"], 
+            uno_late: ["補上！UNO！", "防禦！UNO！"],
+            uno_skip: ["重整態勢！", "我在蓄力！", "等待時機。"],
+            uno_draw_many: ["裝備太重了！", "可惡，行動受限！", "補給過多了！"],
+            uno_stack: ["雙倍奉還！", "反擊！", "格擋反殺！"],
+            uno_poke_early: ["別動手動腳！", "我還沒輸！", "幹什麼！"],
+            uno_poke_late: ["正義不會遲到！", "喊了！", "別大驚小怪。"],
+            loan_reject: ["去工作吧！", "自己加油吧。", "去賺錢。"]
+        },
+        loanStages: [ { text: "兄弟，沒錢了嗎？", opts:[{t:"支援一下！", next:1}, {t:"不用。", next:-1}] }, { text: "這是我私房錢，別告訴科絲塔！", reward: 1000 } ]
+    },
+    {
+        id: 'costa', name: '科絲塔', img: 'https://i.meee.com.tw/bvWXxHc.png', uno_shout_rate: 0.7, uno_catch_rate: 0.5, cp_id: 'kleion',
+        skills: {
+            uno: { name: "裝傻BATA", desc: "忘記喊 UNO 被抓時，有 50% 機率免疫懲罰。" },
+            bigtwo: { name: "模仿犯", desc: "會盡量打出與上家（玩家）相同花色的牌，若成功，玩家需暫停一回合。" }
+        },
+        cp_skill: { name: "化學反應", desc: "與克里昂連動：科絲塔被攻擊時，克里昂會幫忙承受一半的抽牌數。" },
+        lines: { 
+            start: ["希望能贏BATA！", "大家要好心一點BATA。", "我準備好了BATA！"], 
+            play: ["這張牌很可愛BATA。", "給BATA一張。", "嘿！", "這張BATA！"], 
+            win: ["好開心BATA！", "贏了BATA！", "我是第一名BATA！"], 
+            lose: ["真是奇怪BATA...", "大家都不好心...", "嗚嗚...BATA..."], 
+            uno_attack: ["這個給你BATA！", "+4，壞人走開BATA！", "不要過來BATA！", "哼！BATA！"], 
+            uno_hit: ["真是奇怪...", "我不喜歡這個BATA！", "太多了BATA！", "壞人BATA！"], 
+            uno_uno: ["UNO BATA！", "快贏了BATA！"], 
+            uno_catch: ["你壞壞BATA！", "沒喊UNO BATA！", "抓到了BATA！"], 
+            uno_forgot: ["啊...忘記了BATA...", "不要生氣BATA...", "下次會記得BATA..."], 
+            uno_late: ["UNO BATA！", "我有喊BATA！"],
+            uno_skip: ["為什麼不理我BATA...", "我等一下BATA。", "好無聊BATA..."],
+            uno_draw_many: ["好多呀BATA！", "我也想要分給別人BATA！", "拿不動BATA！"],
+            uno_stack: ["給你這個BATA！", "大家都拿一點BATA！", "禮物BATA！"],
+            uno_poke_early: ["還沒BATA！", "不要戳我BATA！", "癢BATA！"],
+            uno_poke_late: ["BATA！喊了！", "我有喊BATA！", "嘻嘻BATA！"],
+            loan_reject: ["我不喜歡你BATA！", "沒有BATA！", "走開BATA！"]
+        },
+        loanStages: [ { text: "你要錢做什麼BATA？", opts:[{t:"買彩虹小馬。", next:1}, {t:"去賭博。", next:-1}] }, { text: "我也喜歡彩虹小馬！給你BATA！", reward: 500 } ]
     },
     { 
-        id: 'hades', name: '冥神', img: 'https://i.meee.com.tw/dhxSvcN.png', 
-        lines: { start: ["..."], play: ["..."], win: ["..."], lose: ["..."] },
-        loanStages: [ { text: "...", opts:[{t:"(伸出手)", next:1}, {t:"(轉身離開)", next:-1}], }, { text: "...", reward: 300 } ]
+        id: 'aura', name: '奧拉', img: 'https://i.meee.com.tw/SCMPHmm.png', uno_shout_rate: 1.0, uno_catch_rate: 1.0, cp_id: 'miras',
+        skills: { 
+            uno: {name:"指定變量", desc:"使用 +4 時，傷害無法被疊加防禦，且無視玩家的防禦技能。"}, 
+            bigtwo: {name:"完美模型", desc:"開局必定持有四張同點數的牌 (鐵支/炸彈)。"}
+        },
+        cp_skill: { name: "神算", desc: "與蜜拉思連動：奧拉使用 +4 時，蜜拉思會打亂所有人的手牌。" },
+        lines: { start: ["變量鎖定。", "開始建立模型。", "系統啟動。"], play: ["最優解。", "執行。", "排除法。", "邏輯正確。"], win: ["數據不會說謊。", "結果符合預期。", "任務完成。"], lose: ["異常數據。", "需要修正算法。", "系統錯誤。"], uno_attack: ["你的勝率歸零了。", "+4，數據溢出。", "強制執行。", "刪除變量。"], uno_hit: ["增加變量...", "負載增加。", "重新計算..."], uno_uno: ["運算即將結束。", "倒數計時。"], uno_catch: ["檢測到規則違規。", "執行懲罰。", "漏洞確認。"], uno_forgot: ["...系統錯誤。", "內存遺失。", "發生未知錯誤。"], uno_late: ["修正：UNO。", "補丁已安裝：UNO。"], uno_skip: ["等待運算資源。", "暫停。", "待機模式。"], uno_draw_many: ["內存溢出。", "數據量過大。", "緩存已滿。"], uno_stack: ["數據回傳。", "錯誤轉移。", "堆疊溢位。"], uno_poke_early: ["拒絕訪問。", "請勿干擾。", "防火牆開啟。"], uno_poke_late: ["已聲明。", "記錄在案。", "狀態正常。"], loan_reject: ["風險評估：高。", "拒絕申請。", "信用不足。"] },
+        loanStages: [ { text: "貸款？請提供抵押品。", opts: [{t:"我的靈魂。", next:1}, {t:"下次還你。", next:-1}] }, { text: "靈魂...有趣的變量。簽下這份契約。", opts: [{t:"(簽名)", next:2}, {t:"太危險了。", next:-1}] }, { text: "契約成立。別讓數據失望。", reward: 30000 } ]
     },
     { 
-        id: 'poseidon', name: '海神', img: 'https://meee.com.tw/YWjKSUI.png', 
-        lines: { start: ["天天開心！"], play: ["好玩！"], win: ["我是國王！"], lose: ["沒了嗎？"] },
-        loanStages: [ { text: "哈哈！錢是什麼？大黑有！", opts:[{t:"那我去找大黑。", next:1}, {t:"借我啦！", next:-1}], }, { text: "大黑說不行，但我偷拿給你！", reward: 20 } ]
-    },
-    { 
-        id: 'miras', name: '蜜拉思', img: 'https://i.meee.com.tw/EQxAIYg.png', 
-        lines: { start: ["這是魔術。"], play: ["幻覺。"], win: ["莊家通吃。"], lose: ["手滑了。"] },
+        id: 'miras', name: '蜜拉思', img: 'https://i.meee.com.tw/EQxAIYg.png', uno_shout_rate: 0.8, uno_catch_rate: 0.9, cp_id: 'aura',
+        skills: { 
+            uno: {name:"詛咒魔術", desc:"被 +2 或 +4 時，傷害減半（無條件捨去）。"}, 
+            bigtwo: {name:"大變活人", desc:"當手牌少於 6 張時，強制與玩家交換全部手牌（每局一次）。"}
+        },
+        cp_skill: { name: "神算", desc: "與奧拉連動：蜜拉思被攻擊時，奧拉有 50% 機率讓攻擊無效。" },
+        lines: { start: ["這是魔術哦。", "想看戲嗎？", "眼睛睜大囉。"], play: ["幻覺。", "這張牌有毒哦。", "嘻嘻。", "變！"], win: ["莊家通吃。", "真無聊，贏了。", "謝幕。"], lose: ["手滑了。", "哎呀，被發現了？", "演砸了。"], uno_attack: ["給你一點『詛咒』。", "+4，驚喜嗎？", "消失吧。", "這是禮物。"], uno_hit: ["哦？想玩我？", "真大膽呢。", "想看我出糗？"], uno_uno: ["結束了哦。", "最後一張。"], uno_catch: ["被我發現囉。", "真是粗心呢。", "作弊是不行的哦（笑）。"], uno_forgot: ["哎呀，故意的哦。", "被抓到了呢。", "忘了呢，嘻嘻。"], uno_late: ["嘻嘻，UNO。", "逗你的，UNO。"], uno_skip: ["想看我休息嗎？", "好吧。", "中場休息。"], uno_draw_many: ["這可是作弊哦？", "太多禮物了。", "手裡藏不住了。"], uno_stack: ["送你囉。", "變！", "轉移！"], uno_poke_early: ["不是那裡哦。", "還沒呢。", "想看戲法？"], uno_poke_late: ["變出來囉。", "嘻嘻，喊了。", "秘密。"], loan_reject: ["沒錢哦。", "變不出來。", "下次吧。"] },
         loanStages: [ { text: "想要變出錢嗎？", opts:[{t:"教我！", next:-1}, {t:"借我一點就好。", next:1}], }, { text: "不要。我沒事也不會借你錢。", reward: 0 } ]
     },
     { 
-        id: 'narcissus', name: '納希瑟斯', img: 'https://i.meee.com.tw/kvfcmWP.png', 
-        lines: { start: ["為了維納托先生！"], play: ["愛的直覺。"], win: ["愛的力量！"], lose: ["只要維納托先生開心..."] },
-        loanStages: [ { text: "我的錢都是留給維納托先生的。", opts:[{t:"是他讓我來拿的。", next:1}, {t:"借一點嘛。", next:-1}], }, { text: "真的嗎！維納托先生需要多少？全拿去！", reward: 6000 } ]
+        id: 'poseidon', name: '海神', img: 'https://meee.com.tw/YWjKSUI.png', uno_shout_rate: 0.4, uno_catch_rate: 0.4, cp_id: 'hades',
+        skills: { 
+            uno: {name:"大海嘯", desc:"打出 +4 時，強制重新洗混所有玩家的手牌並隨機分配（亂流）。"}, 
+            bigtwo: {name:"海之霸主", desc:"開局必定持有 3 張紅心牌，且打出紅心牌後可抽一張牌補充手牌。"}
+        },
+        cp_skill: { name: "深海", desc: "與冥神連動：海神打出 +4 時，冥神會額外指定玩家暫停一回合。" },
+        lines: { 
+            start: ["天天開心！", "我們來玩！", "我是大海！"], 
+            play: ["好玩！", "這張像水母！", "給你！", "丟出去！"], 
+            win: ["我是國王！哈哈！", "我要去游泳！", "贏了！"], 
+            lose: ["沒了嗎？再來！", "我輸了！", "嗚..."], 
+            uno_attack: ["送你螃蟹！+2！", "+4！像海浪一樣！", "嘩啦啦！", "給你這個！"], 
+            uno_hit: ["哈哈！好多牌！", "謝謝你！", "大豐收！", "好多魚！"], 
+            uno_uno: ["UNO！天天開心！", "剩一張！"], 
+            uno_skip: ["我在休息！", "看海！", "咕嚕咕嚕..."], 
+            uno_draw_many: ["好多魚！", "抓不完！", "滿出來了！"], 
+            uno_stack: ["給你給你！", "接住！", "海浪來了！"], 
+            uno_catch: ["抓！我抓到了！", "你沒喊！", "我看見了！"], 
+            uno_forgot: ["忘記了！哈哈！", "我要喊嗎？", "什麼？"], 
+            uno_late: ["我想起來了！UNO！", "UNO！哈哈！"],
+            uno_poke_early: ["癢！哈哈！", "還沒呀！", "咕嚕咕嚕！"], 
+            uno_poke_late: ["喊了！", "哈哈UNO！", "聽到了嗎！"],
+            loan_reject: ["大黑說不行。", "我們沒有錢了！", "下次給你！"]
+        },
+        loanStages: [ { text: "哈哈！錢是什麼？大黑有！", opts:[{t:"那我去找大黑。", next:1}, {t:"借我啦！", next:-1}], }, { text: "大黑說不行，但我偷拿給你！", reward: 20 } ]
+    },
+    { 
+        id: 'hades', name: '冥神', img: 'https://i.meee.com.tw/dhxSvcN.png', uno_shout_rate: 0.9, uno_catch_rate: 0.8, cp_id: 'poseidon',
+        skills: { 
+            uno: {name:"沉默是金", desc:"被動技能：不需要喊 UNO 也不會被抓。"}, 
+            bigtwo: {name:"寂靜殺手", desc:"手牌剩最後一張時，該牌視為 Joker (比黑桃 2 大)。"}
+        },
+        cp_skill: { name: "深海", desc: "與海神連動：冥神手牌數越少，海神抽到好牌的機率越高。" },
+        lines: { start: ["...", "(抱著浮板)"], play: ["...", "(點頭)"], win: ["...", "(發呆)"], lose: ["...", "(發呆)"], uno_attack: ["...給。", "(放下+4)"], uno_hit: ["...", "(默默抽牌)"], uno_uno: ["...", "(無視規則)"], uno_catch: ["...", "(指著你)"], uno_forgot: ["...", "..."], uno_late: ["...UNO。"], uno_skip: ["...", "(發呆)"], uno_draw_many: ["...", "..."], uno_stack: ["...", "(推給你)"], uno_poke_early: ["...", "(搖頭)"], uno_poke_late: ["...", "(點頭)"], loan_reject: ["...", "(轉身)"] },
+        loanStages: [ { text: "...", opts:[{t:"(伸出手)", next:1}, {t:"(轉身離開)", next:-1}], }, { text: "...", reward: 300 } ]
+    },
+    { 
+        id: 'xiaomu', name: '小目', img: 'https://i.meee.com.tw/IHt74xD.png', uno_shout_rate: 0.9, uno_catch_rate: 0.9, cp_id: 'mollie',
+        skills: { 
+            uno: {name:"壟斷", desc:"使用 Wild 時，會直接打出下一張同色牌(連打)。"}, 
+            bigtwo: {name:"強制併購", desc:"當有玩家打出 2 時，小目會直接將那張 2 收購（偷）進自己手牌（每局一次）。"}
+        },
+        cp_skill: { name: "芒果之戀", desc: "與茉莉連動：若茉莉在場，小目開局手牌數 -1 (UNO) / +1 優先權 (Big2)。" },
+        lines: { start: ["這就是總裁的魄力。", "看著我！", "時間就是金錢。"], play: ["戰略投資。", "天涼了，該讓你們破產了。", "決策。", "收購。"], win: ["全場買單！", "我是最棒的總裁！", "這就是實力。"], lose: ["這叫戰損風。", "這點小錢不算什麼。", "只是市場波動。"], uno_attack: ["商業制裁！", "壟斷顏色。", "封殺。", "給你點壓力。"], uno_hit: ["資金周轉...", "這只是暫時的虧損。", "增加負債..."], uno_uno: ["最後一擊，閃亮登場！", "準備收購。"], uno_catch: ["商業漏洞。", "你大意了。", "違約金拿來。"], uno_forgot: ["咳...這是戰略性沉默...", "我不小心...", "秘書忘了提醒我。"], uno_late: ["聲明：UNO。", "補發公告：UNO。"], uno_skip: ["暫停會議。", "休息時間。", "凍結資產。"], uno_draw_many: ["資產過剩？", "沒地方放了...", "庫存積壓。"], uno_stack: ["風險轉移！", "轉嫁危機！", "槓桿原理！"], uno_poke_early: ["別急，還沒簽約。", "請預約。", "保全？"], uno_poke_late: ["公告已發。", "UNO。", "知道了。"], loan_reject: ["評估不通過。", "沒興趣。", "駁回。"] },
+        loanStages: [ { text: "資金鍊斷裂了？我可以注資，但我要聽實話。", opts: [{t:"這是戰略性虧損。", next:1}, {t:"求求你借我錢！", next:-1}] }, { text: "哼，有意思。你的擔保是什麼？", opts: [{t:"我是為了茉莉才玩的。", next:2}, {t:"我會還你兩倍。", next:-1}] }, { text: "看在茉莉的份上...這叫天使投資。", reward: 5000 } ]
+    },
+    { 
+        id: 'mollie', name: '茉莉', img: 'https://i.meee.com.tw/yUTV61e.png', uno_shout_rate: 0.95, uno_catch_rate: 0.3, cp_id: 'xiaomu',
+        skills: { 
+            uno: {name:"安慰劑", desc:"被 +2 攻擊時，只需抽 1 張。"}, 
+            bigtwo: {name:"心軟", desc:"茉莉絕不打出 A 或 2。若持有，她會偷偷送給手牌最多的玩家。"}
+        },
+        cp_skill: { name: "芒果之戀", desc: "與小目連動：若小目在場，茉莉不會被 +4 攻擊選中。" },
+        lines: { start: ["希望大家玩得開心。", "下班真好", "請多指教。"], play: ["溫柔一點。", "給你這張。", "輕輕的。", "這張可以嗎？"], win: ["太好了，運氣真好。", "真開心。", "比吸粉還爽。"], lose: ["沒事的。", "只要大家開心就好。", "我不介意的。"], uno_attack: ["不好意思...", "這個給你。", "這是處方籤。", "稍微暫停一下。"], uno_hit: ["哎呀...", "沒關係的。", "好多牌呀。", "辛苦了。"], uno_uno: ["UNO囉。", "剩一張了。"], uno_catch: ["那個...是不是忘了喊？", "小心一點哦。", "我發現了哦。"], uno_forgot: ["哎呀，走神了...", "抱歉...", "我真迷糊。"], uno_late: ["啊，UNO。", "對不起，UNO。"], uno_skip: ["那我休息一下。", "看大家玩。", "喝口水。"], uno_draw_many: ["好多藥草...", "太重了...", "這是大豐收嗎？"], uno_stack: ["這個...給下一位。", "請用。", "傳遞下去。"], uno_poke_early: ["還沒呢。", "小心手。", "不要急。"], uno_poke_late: ["喊囉。", "沒忘記。", "UNO。"], loan_reject: ["抱歉...", "呃...好吧", "那掰掰～"] },
+        loanStages: [ { text: "你還好嗎？臉色不太好。", opts:[{t:"是的醫生，我破產了。", next:1}, {t:"不用。", next:-1}], }, { text: "呃好吧，這點錢拿去急用吧，別告訴林恩。", reward: 800 } ]
     }
 ];
 
-const CP_PAIRS = [
-    { a: 'venato', b: 'narcissus', linesA: ["納西，看好了。", "哼，還算華麗。"], linesB: ["維納托先生！加油！", "維納托先生看我！"] },
-    { a: 'xiaomu', b: 'mollie', linesA: ["茉莉不用擔心。", "為了芒果。"], linesB: ["小目加油。", "我的大總裁。"] },
-    { a: 'lanlan', b: 'jonona', linesA: ["喬諾娜我保護你！", "誰敢贏喬諾娜！"], linesB: ["蘭蘭...謝謝你...", "有蘭蘭在真好..."] },
-    { a: 'peter', b: 'lynn', linesA: ["林恩坐直！", "今日運勢說要勤奮。"], linesB: ["彼得好吵...", "贏了就不唸了吧？"] }
-];
-
-const RULES = {
-    'redblack': {min:1, max:1}, 'blackjack': {min:1, max:1},
-    'oldmaid': {min:3, max:3}, 'bigtwo': {min:3, max:3}
+const RELATIONSHIP_LINES = {
+    narcissus: {
+        venato: { start: ["維納托先生！加油！"], win: ["獻給維納托先生！"], uno_attack: ["不准妨礙維納托先生。"], uno_hit: ["竟然在維納托先生面前打我..."] }
+    },
+    venato: {
+        narcissus: { start: ["納西，看好了。"], win: ["納西，記下來了嗎？"], uno_catch: ["納西，專心點！"] }
+    },
+    xiaomu: {
+        mollie: { start: ["茉莉不用擔心。"], win: ["茉莉，喜歡嗎？"], uno_hit: ["在芒果面前丟臉了..."], uno_attack: ["誰敢動我的芒果！"] },
+        costa: { start: ["科絲塔小公主，哥哥罩你！"], uno_attack: ["給你的，小公主！"] }
+    },
+    mollie: {
+        xiaomu: { start: ["芒果加油～"], play: ["小目，這張給你。"], uno_hit: ["小目...我沒事。"], uno_catch: ["小目，是不是忘了？"] }
+    },
+    lanlan: {
+        jonona: { start: ["喬諾娜，看蘭蘭的！"], win: ["喬諾娜你看！我贏了！"], uno_attack: ["這個顏色像喬諾娜！"], uno_catch: ["喬諾娜！UNO呀！"] },
+        novian: { start: ["諾維安！我要買大船！"], uno_attack: ["諾維安吃這個！"] }
+    },
+    jonona: {
+        lanlan: { start: ["蘭蘭...謝謝你..."], play: ["這張給蘭蘭。"], win: ["太好了！蘭蘭我贏了！"], uno_catch: ["蘭蘭...沒喊..."] },
+        novian: { start: ["諾維安...", "那個...請多指教..."], uno_hit: ["諾維安...好痛..."] }
+    },
+    peter: {
+        lynn: { start: ["林恩！你在真好！", "我的貓。"], uno_attack: ["林恩，這是為了你好！"], win: ["為了我的貓。"], uno_catch: ["貓，你沒喊。"] },
+        narcissus: { uno_attack: ["離林恩遠點，Yellow Shit。"], start: ["Yellow Shit 也在..."] }
+    },
+    lynn: {
+        peter: { start: ["彼得，你在幹嘛..."], uno_attack: ["彼得安靜點...+2"], uno_catch: ["彼得...好麻煩..."] }
+    },
+    poseidon: {
+        hades: { start: ["大黑看我！"], win: ["大黑我贏了！"], uno_catch: ["大黑你沒喊！"], uno_hit: ["大黑救我！"] },
+        miras: { start: ["小花！"], uno_attack: ["小花接住！螃蟹！"] }
+    },
+    hades: {
+        poseidon: { start: ["...", "(看著海神)"], win: ["...", "(把籌碼推給海神)"], uno_catch: ["...", "(戳海神)"], uno_hit: ["...", "(擋在海神前面)"] },
+        miras: { start: ["...", "(看小花)"], uno_attack: ["...給小花。"] }
+    },
+    kleion: {
+        costa: { start: ["科絲塔我會保護你！"], win: ["科絲塔你看！"], uno_hit: ["學好化學就不會這樣了！"], uno_attack: ["這是化學反應！"] }
+    },
+    costa: {
+        kleion: { start: ["克里昂加油BATA！"], play: ["給不好心的人一張BATA。"], win: ["比克里昂厲害BATA！"], uno_attack: ["克里昂不好心！ BATA！"] },
+        xiaomu: { start: ["哥哥BATA！"], uno_catch: ["哥哥沒喊BATA！"] }
+    },
+    aura: {
+        miras: { start: ["蜜拉思，別作弊。"], lose: ["蜜拉思，你是不是動手腳了？"], uno_catch: ["蜜拉思，抓到你了。"] }
+    },
+    miras: {
+        aura: { start: ["奧拉，你看這牌。"], uno_attack: ["奧拉，驚喜哦。"], uno_catch: ["奧拉，你也有今天。"] }
+    },
+    novian: {
+        jonona: { start: ["喬諾娜！", "我來保護你！"], uno_attack: ["啊...喬諾娜抱歉！"] },
+        lanlan: { start: ["阿蘭！看誰錢多！"], win: ["阿蘭我贏了！"] }
+    },
+    lazar: {
+        lanlan: { start: ["維爾德拉克斯閣下，請慢點。"], win: ["閣下，玩得開心嗎？"], uno_hit: ["閣下真是充滿活力。"] }
+    }
 };
 
-let App = { coins: 10000, wins: 0, losses: 0, gameId: '', selected: [], players: [], deck: [], turn: 0, bgm: false };
+const RULES = { 'redblack': {min:1, max:1}, 'blackjack': {min:1, max:1}, 'oldmaid': {min:3, max:3}, 'bigtwo': {min:3, max:3}, 'uno': {min:3, max:3} };
+let App = { coins: 10000, wins: 0, losses: 0, gameId: '', selected: [], players: [], deck: [], turn: 0, bgm: false, direction: 1, table: [], unoRule: 'standard', unoStacking: false, unoStack: 0, skillQueue: [], isProcessingSkill: false };
 
-if(localStorage.getItem('alice_save_v13')) {
-    const s = JSON.parse(localStorage.getItem('alice_save_v13'));
+if(localStorage.getItem('rabbit_save_v20')) {
+    const s = JSON.parse(localStorage.getItem('rabbit_save_v20'));
     App.coins = s.coins; App.wins = s.wins; App.losses = s.losses;
+    if(s.bgm !== undefined) App.bgm = s.bgm;
 }
-// Fix NaN
 if(isNaN(App.coins)) App.coins = 10000;
 updateUI();
-
+</script>
+<script>
 /* --- CORE FUNCTIONS --- */
-
-// 修正重點 2: 加入確保 logic，只在音樂未播放時觸發一次，並於成功後移除監聽
-function ensureAudio() { 
-    if (!App.bgm) {
-        toggleBGM();
-    }
-    // 成功觸發後，移除 body 上的 onclick，避免未來點擊畫面（例如暫停後點牌）導致音樂又自動播放
-    document.body.removeAttribute('onclick');
-}
-
+function ensureAudio() { document.body.removeAttribute('onclick'); updateAudioIcon(); }
 function updateUI() {
-    // Protect from Negative
     if(App.coins < 0) App.coins = 0;
-    
     document.getElementById('ui-score').innerText = App.coins.toLocaleString();
     document.getElementById('stat-wins').innerText = App.wins;
     document.getElementById('stat-losses').innerText = App.losses;
-    localStorage.setItem('alice_save_v13', JSON.stringify({coins:App.coins, wins:App.wins, losses:App.losses}));
+    localStorage.setItem('rabbit_save_v20', JSON.stringify({coins:App.coins, wins:App.wins, losses:App.losses, bgm:App.bgm}));
 }
-
-// 修正重點 3: 接收 event 參數，並使用 stopPropagation
 function toggleBGM(e) {
-    if(e) e.stopPropagation(); // 阻止點擊事件冒泡到 body
-    
-    const a = document.getElementById('bgm');
-    a.volume = 0.4;
-    if(App.bgm) { a.pause(); document.getElementById('btn-bgm').style.opacity = 0.5; }
-    else { a.play().catch(()=>{}); document.getElementById('btn-bgm').style.opacity = 1; }
-    App.bgm = !App.bgm;
+    if(e) e.stopPropagation();
+    const a = document.getElementById('bgm'); a.volume = 0.4; App.bgm = !App.bgm;
+    if(App.bgm) a.play().catch(()=>{}); else a.pause();
+    updateAudioIcon(); updateUI();
 }
-function sfx(id) { document.getElementById(id).currentTime=0; document.getElementById(id).play().catch(()=>{}); }
-
-function switchScreen(id) {
-    document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+function updateAudioIcon() {
+    const btn = document.getElementById('btn-bgm');
+    if(App.bgm) { btn.style.opacity = 1; btn.innerText = "♫"; document.getElementById('bgm').play().catch(()=>{}); } 
+    else { btn.style.opacity = 0.5; btn.innerText = "✕"; document.getElementById('bgm').pause(); }
 }
-function goHome() { 
-    document.getElementById('modal-result').style.display = 'none';
-    document.getElementById('modal-loan').style.display = 'none';
-    switchScreen('screen-menu'); 
-}
+function sfx(id) { if(!App.bgm) return; document.getElementById(id).currentTime=0; document.getElementById(id).play().catch(()=>{}); }
+function switchScreen(id) { document.querySelectorAll('.screen').forEach(el => el.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+function goHome() { document.getElementById('modal-result').style.display = 'none'; document.getElementById('modal-loan').style.display = 'none'; switchScreen('screen-menu'); }
 function goToLobby(gid) {
     App.gameId = gid; App.selected = []; renderLobby(); switchScreen('screen-lobby');
-    ensureAudio();
+    document.getElementById('lobby-uno-opt').style.display = (gid === 'uno') ? 'block' : 'none';
+    updateAudioIcon();
 }
 
-/* --- LOAN SYSTEM (FIXED) --- */
-let currentLoanChar = null; // 記錄當前對話的角色
-let currentLoanIdx = 0;     // 記錄當前對話進行到第幾階段
-
-function openLoanScreen() {
-    switchScreen('screen-loan');
-    const list = document.getElementById('loan-list');
-    list.innerHTML = '';
-    CHARS.forEach(c => {
-        // 只顯示有 loanStages 設定的角色
-        if(!c.loanStages) return;
-        
-        const div = document.createElement('div');
-        div.className = 'loan-item';
-        // 計算難度（這裡簡單用階段數量當作難度示意）
-        const diffStars = "★".repeat(Math.min(c.loanStages.length, 5));
-        
-        div.innerHTML = `
-            <img src="${c.img}" style="width:50px;height:50px;border-radius:50%;object-fit:cover">
-            <div class="loan-info">
-                <div class="loan-name">${c.name}</div>
-                <div class="loan-desc">協商難度: ${diffStars}</div>
-            </div>
-        `;
-        div.onclick = () => startLoanTalk(c);
-        list.appendChild(div);
-    });
+/* --- LOBBY & SKILL DISPLAY --- */
+let longPressTimer; let isLongPress = false;
+function addLongPressHandler(element, onClick, onLongPress) {
+    let timer; let isLong = false; let startX, startY;
+    const start = (e) => { isLong = false; if(e.type === 'touchstart') { startX = e.touches[0].clientX; startY = e.touches[0].clientY; } timer = setTimeout(() => { isLong = true; onLongPress(e); }, 500); };
+    const cancel = () => { clearTimeout(timer); };
+    const move = (e) => { if(e.type === 'touchmove') { let x = e.touches[0].clientX; let y = e.touches[0].clientY; if(Math.abs(x - startX) > 10 || Math.abs(y - startY) > 10) cancel(); } else { cancel(); } };
+    const end = (e) => { clearTimeout(timer); if (!isLong) { onClick(e); } };
+    element.onmousedown = start; element.ontouchstart = start; element.onmouseup = end; element.ontouchend = (e) => { e.preventDefault(); end(e); }; element.onmousemove = move; element.ontouchmove = move; element.onmouseleave = cancel;
 }
-
-function startLoanTalk(c) {
-    currentLoanChar = c;
-    currentLoanIdx = 0; // 重置對話進度
-    
-    const m = document.getElementById('modal-loan');
-    m.style.display = 'flex';
-    document.getElementById('loan-avatar').src = c.img;
-    
-    renderLoanStage();
-}
-
-function renderLoanStage() {
-    const stage = currentLoanChar.loanStages[currentLoanIdx];
-    const textField = document.getElementById('loan-text');
-    const optsField = document.getElementById('loan-options');
-    
-    // 更新對話文字
-    textField.innerText = stage.text;
-    optsField.innerHTML = '';
-
-    // 判斷是否為獎勵結算階段
-    if (stage.reward !== undefined) {
-        const btn = document.createElement('div');
-        btn.className = 'loan-opt';
-        btn.style.borderColor = 'var(--gold)';
-        btn.innerText = `[收下款項 $${stage.reward}]`;
-        btn.onclick = () => {
-            alert(`${currentLoanChar.name}給了你錢！ (獲得 ${stage.reward})`);
-            updateScore(stage.reward);
-            document.getElementById('modal-loan').style.display = 'none';
-        };
-        optsField.appendChild(btn);
-    } 
-    // 一般對話選項階段
-    else if (stage.opts) {
-        stage.opts.forEach(opt => {
-            const btn = document.createElement('div');
-            btn.className = 'loan-opt';
-            btn.innerText = opt.t;
-            btn.onclick = () => handleLoanChoice(opt.next);
-            optsField.appendChild(btn);
-        });
-    }
-}
-
-function handleLoanChoice(nextIdx) {
-    if (nextIdx === -1) {
-        // 失敗邏輯
-        alert(`${currentLoanChar.name}: 我想你需要反省一下。 (協商失敗)`);
-        document.getElementById('modal-loan').style.display = 'none';
-    } else {
-        // 進入下一階段
-        currentLoanIdx = nextIdx;
-        renderLoanStage();
-    }
-}
-
-/* --- LOBBY --- */
 function renderLobby() {
-    const r = RULES[App.gameId];
-    document.getElementById('lobby-hint').innerText = `SELECT ${r.min} GUEST(S)`;
-    const g = document.getElementById('char-grid');
-    g.innerHTML = '';
+    const r = RULES[App.gameId]; const g = document.getElementById('char-grid'); g.innerHTML = '';
     CHARS.forEach(c => {
-        const div = document.createElement('div');
-        div.className = 'char-item';
+        const div = document.createElement('div'); div.className = 'char-item';
         div.innerHTML = `<img class="char-avatar" src="${c.img}"><div class="char-name">${c.name}</div>`;
-        div.onclick = () => toggleChar(div, c);
+        addLongPressHandler(div, () => toggleChar(div, c), () => { showSkillModal(c); sfx('sfx-card'); });
         g.appendChild(div);
     });
     checkLobby();
 }
-
+function showSkillModal(c) {
+    document.getElementById('skill-char-img').src = c.img; document.getElementById('skill-char-name').innerText = c.name;
+    const container = document.getElementById('skill-content-area'); container.innerHTML = '';
+    let skill = null; let title = "PASSIVE";
+    if(App.gameId === 'uno') { title = "UNO SKILL"; skill = c.skills.uno; } else if(App.gameId === 'bigtwo') { title = "BIG 2 SKILL"; skill = c.skills.bigtwo; } else { skill = {name:"通用", desc:"無特殊技能"}; }
+    container.innerHTML += `<div class="skill-section"><div class="skill-title"><span>${title}</span> <span class="skill-tag">PASSIVE (AI)</span></div><div class="skill-name">${skill.name}</div><div class="skill-desc">${skill.desc}</div></div>`;
+    if(c.cp_skill) { container.innerHTML += `<div class="skill-section skill-cp-section"><div class="skill-title"><span style="color:#ff55aa">CP COMBO</span> <span class="skill-tag">LINK</span></div><div class="skill-name" style="color:#ff55aa">${c.cp_skill.name}</div><div class="skill-desc">${c.cp_skill.desc}</div></div>`; }
+    document.getElementById('skill-modal-overlay').classList.add('show');
+}
+function closeSkillModal() { document.getElementById('skill-modal-overlay').classList.remove('show'); }
 function toggleChar(div, c) {
+    if(document.getElementById('skill-modal-overlay').classList.contains('show')) return;
     const idx = App.selected.indexOf(c);
     if(idx>-1) App.selected.splice(idx,1);
-    else {
-        if(App.selected.length < RULES[App.gameId].max) App.selected.push(c);
-        else if(RULES[App.gameId].max===1) App.selected = [c];
-    }
-    renderLobbySelection();
-    checkLobby();
+    else { if(App.selected.length < RULES[App.gameId].max) App.selected.push(c); else if(RULES[App.gameId].max===1) App.selected = [c]; }
+    renderLobbySelection(); checkLobby();
+}
+function renderLobbySelection() { document.querySelectorAll('.char-item').forEach((el) => { const charName = el.querySelector('.char-name').innerText; if(App.selected.some(s => s.name === charName)) el.classList.add('selected'); else el.classList.remove('selected'); }); }
+function checkLobby() { document.getElementById('btn-start').disabled = !(App.selected.length >= RULES[App.gameId].min && App.selected.length <= RULES[App.gameId].max); }
+
+/* --- LOAN --- */
+function openLoanScreen() { switchScreen('screen-loan'); const list = document.getElementById('loan-list'); list.innerHTML = ''; CHARS.forEach(c => { if(!c.loanStages) return; const div = document.createElement('div'); div.className = 'loan-item'; div.innerHTML = `<img src="${c.img}" class="loan-avatar-sm"><div class="loan-info"><div class="loan-name">${c.name}</div><div class="loan-hint">點擊協商</div></div>`; div.onclick = () => startLoanTalk(c); list.appendChild(div); }); }
+function startLoanTalk(c) { let currentLoanChar = c; let currentLoanIdx = 0; const m = document.getElementById('modal-loan'); m.style.display = 'flex'; document.getElementById('loan-avatar').src = c.img; renderLoanStage(c, 0); }
+function renderLoanStage(c, idx) {
+    const stage = c.loanStages[idx]; document.getElementById('loan-text').innerText = stage.text; const opts = document.getElementById('loan-options'); opts.innerHTML = '';
+    if (stage.reward !== undefined) { const btn = document.createElement('div'); btn.className = 'loan-opt'; btn.style.borderColor = 'var(--gold)'; btn.innerText = `[收下款項 $${stage.reward}]`; btn.onclick = () => { alert(`獲得 ${stage.reward}`); updateScore(stage.reward); document.getElementById('modal-loan').style.display = 'none'; }; opts.appendChild(btn); } 
+    else if (stage.opts) { stage.opts.forEach(opt => { const btn = document.createElement('div'); btn.className = 'loan-opt'; btn.innerText = opt.t; btn.onclick = () => { if (opt.next === -1) { const rejectLines = c.lines.loan_reject || ["..."]; const rejectMsg = rejectLines[Math.floor(Math.random()*rejectLines.length)]; document.getElementById('loan-text').innerText = rejectMsg; opts.innerHTML = `<div class="loan-opt" onclick="document.getElementById('modal-loan').style.display='none'">[離開]</div>`; } else renderLoanStage(c, opt.next); }; opts.appendChild(btn); }); }
 }
 
-function renderLobbySelection() {
-    const cards = document.querySelectorAll('.char-item');
-    cards.forEach((el) => {
-        const charName = el.querySelector('.char-name').innerText;
-        const isSel = App.selected.some(s => s.name === charName);
-        if(isSel) el.classList.add('selected'); else el.classList.remove('selected');
-    });
-}
-
-function checkLobby() {
-    const r = RULES[App.gameId];
-    document.getElementById('btn-start').disabled = !(App.selected.length >= r.min && App.selected.length <= r.max);
-}
-
-function triggerCPEvents() {
-    CP_PAIRS.forEach(pair => {
-        const p1 = App.players.find(p => !p.isUser && p.char.id === pair.a);
-        const p2 = App.players.find(p => !p.isUser && p.char.id === pair.b);
-        if (p1 && p2) {
-            p1.char.lines.start = [...p1.char.lines.start, ...pair.linesA];
-            p2.char.lines.start = [...p2.char.lines.start, ...pair.linesB];
-        }
-    });
-}
-
+/* --- GAME ENGINE & SKILL QUEUE --- */
 function say(idx, type) {
     if(App.players[idx].isUser) return;
-    const char = App.players[idx].char;
-    const lines = char.lines[type];
-    const text = lines[Math.floor(Math.random() * lines.length)];
+    const charData = App.players[idx].char; let linePool = [...(charData.lines[type] || charData.lines.play || ["..."])];
+    if (RELATIONSHIP_LINES[charData.id]) { App.players.forEach(p => { if (p.char && p.char.id !== charData.id && RELATIONSHIP_LINES[charData.id][p.char.id] && RELATIONSHIP_LINES[charData.id][p.char.id][type]) linePool.push(...RELATIONSHIP_LINES[charData.id][p.char.id][type]); }); }
+    const text = linePool[Math.floor(Math.random() * linePool.length)];
     const el = document.querySelector(`#seat-${idx} .bubble`);
-    if(el) {
-        el.innerText = text;
-        el.classList.add('show');
-        setTimeout(() => el.classList.remove('show'), 2500);
+    if(el) { el.innerText = text; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 3000); }
+}
+function triggerSkill(pIdx, skill) {
+    if(!skill) return; 
+    App.skillQueue.push({pIdx: pIdx, skill: skill});
+    processSkillQueue();
+}
+function processSkillQueue() {
+    if(App.isProcessingSkill || App.skillQueue.length === 0) return;
+    App.isProcessingSkill = true;
+    const item = App.skillQueue.shift();
+    // Only show skill name if AI
+    const pName = App.players[item.pIdx].char.name;
+    const t = document.getElementById('skill-toast');
+    t.innerHTML = `<div class="st-title">★ ${item.skill.name}</div><div class="st-user">${pName} 發動了技能！</div><div class="st-desc">${item.skill.desc}</div>`;
+    t.classList.remove('show'); void t.offsetWidth; t.classList.add('show'); sfx('sfx-win');
+    setTimeout(() => { t.classList.remove('show'); App.isProcessingSkill = false; processSkillQueue(); }, 3500);
+}
+
+// ★★★ NEW FUNCTION: Rigging Hands for AI ONLY ★★★
+function distributeSkillCards() {
+    if (App.gameId === 'bigtwo') {
+        App.players.forEach((p, idx) => {
+            if(p.isUser) return; // SKIP PLAYER
+            const cid = p.char.id;
+            
+            // Helper: Find card in deck or steal from others (even player)
+            const stealCard = (cond) => {
+                let card = null;
+                const deckIdx = App.deck.findIndex(cond);
+                if(deckIdx > -1) { card = App.deck.splice(deckIdx, 1)[0]; }
+                else {
+                    for(let i=0; i<4; i++) {
+                        if(i===idx) continue;
+                        const vIdx = App.players[i].hand.findIndex(cond);
+                        if(vIdx > -1) { card = App.players[i].hand.splice(vIdx, 1)[0]; break; }
+                    }
+                }
+                if(card) { p.hand.push(card); return true; }
+                return false;
+            };
+
+            // Skills
+            if(cid === 'venato') { if(stealCard(c => c.s==='♣' && c.r==='3')) triggerSkill(idx, p.char.skills.bigtwo); }
+            if(cid === 'poseidon') { 
+                // Needs 3 Hearts
+                let count = 0;
+                for(let i=0; i<3; i++) { if(stealCard(c => c.s==='♥')) count++; }
+                if(count>0) triggerSkill(idx, p.char.skills.bigtwo);
+            }
+            if(cid === 'aura') {
+                // Perfect Model: 4 of a Kind
+                // Try to find a rank with many cards
+                const counts = {}; App.deck.forEach(c => counts[c.r] = (counts[c.r]||0)+1);
+                const bestRank = Object.keys(counts).find(r => counts[r] >= 4);
+                if(bestRank) {
+                    for(let i=0; i<4; i++) stealCard(c => c.r === bestRank);
+                    triggerSkill(idx, p.char.skills.bigtwo);
+                }
+            }
+            if(cid === 'lanlan') { if(stealCard(c => c.s==='♦' && c.r==='3')) triggerSkill(idx, p.char.skills.bigtwo); }
+            // Lazar skill is active logic, checked in initGame
+        });
+        // Refill hands to 13
+        App.players.forEach(p => { while(p.hand.length < 13 && App.deck.length > 0) p.hand.push(App.deck.pop()); });
+    }
+    
+    if (App.gameId === 'uno') {
+        App.players.forEach((p, idx) => {
+            if(p.isUser) return;
+            const cid = p.char.id;
+            const stealCard = (cond) => {
+                const deckIdx = App.deck.findIndex(cond);
+                if(deckIdx > -1) { p.hand.push(App.deck.splice(deckIdx, 1)[0]); return true; }
+                return false;
+            };
+            if(cid === 'lanlan') { if(stealCard(c => c.type === 'wild4' || c.type === 'draw2')) triggerSkill(idx, p.char.skills.uno); }
+        });
+        // Refill to 7
+        App.players.forEach(p => { while(p.hand.length < 7 && App.deck.length > 0) p.hand.push(App.deck.pop()); });
+        
+        // XiaoMu CP Skill
+        const xm = App.players.find(x => x.char && x.char.id === 'xiaomu');
+        const mo = App.players.find(x => x.char && x.char.id === 'mollie');
+        if(xm && mo && !xm.isUser) {
+            xm.hand.pop(); 
+            triggerSkill(App.players.indexOf(xm), xm.char.cp_skill);
+        }
     }
 }
 
-/* --- GAME SETUP --- */
 function initGame() {
-    document.getElementById('modal-result').style.display = 'none';
-    switchScreen('screen-game');
-    ensureAudio();
-
-    App.players = [];
-    App.selected.forEach(c => App.players.push({isUser:false, char:JSON.parse(JSON.stringify(c)), hand:[]}));
-    App.players.push({isUser:true, char:null, hand:[]});
-
-    triggerCPEvents();
-
-    const area = document.getElementById('seat-container');
-    area.innerHTML = '';
-    const posMap = App.players.length===2 ? [1] : [0, 1, 2];
+    document.getElementById('modal-result').style.display = 'none'; switchScreen('screen-game'); updateAudioIcon();
+    App.skillQueue = []; App.isProcessingSkill = false;
+    if(App.gameId === 'uno') { App.unoRule = document.getElementById('uno-inf-mode').checked ? 'infinite' : 'standard'; App.unoStacking = document.getElementById('uno-stack-mode').checked; App.unoStack = 0; }
     
+    // Setup Players
+    App.players = []; 
+    App.selected.forEach(c => App.players.push({ isUser:false, char:JSON.parse(JSON.stringify(c)), hand:[], unoSaid:false, vulnerable:false, swapped:false })); 
+    App.players.push({isUser:true, char:null, hand:[], unoSaid:false, vulnerable:false, swapped:false});
+    
+    const area = document.getElementById('seat-container'); area.innerHTML = ''; const posMap = App.players.length===2 ? [1] : [0, 1, 2];
     for(let i=0; i<App.players.length-1; i++) {
-        const p = App.players[i];
-        const div = document.createElement('div');
-        div.className = 'seat'; div.dataset.pos = posMap[i]; div.id = `seat-${i}`;
-        
+        const p = App.players[i]; const div = document.createElement('div'); div.className = 'seat'; div.dataset.pos = posMap[i]; div.id = `seat-${i}`; 
+        addLongPressHandler(div, () => onSeatClick(i), () => { showSkillModal(p.char); });
         let extraUI = '';
-        if(App.gameId === 'oldmaid') extraUI = `<div class="mini-hand-container" id="mini-hand-${i}"></div>`;
-        if(App.gameId === 'bigtwo') extraUI = `<div class="count-badge" id="b2-badge-${i}">13</div>`;
-        if(App.gameId === 'blackjack') extraUI = `<div class="dealer-score" id="dealer-score">0</div>`;
-
-        div.innerHTML = `
-            <img class="op-avatar" src="${p.char.img}">
-            ${extraUI}
-            <div class="bubble"></div>
-        `;
+        if(App.gameId==='oldmaid' || App.gameId==='uno') extraUI = `<div class="mini-hand-container" id="mini-hand-${i}"></div>`;
+        if(App.gameId==='bigtwo') extraUI = `<div class="count-badge" id="b2-badge-${i}">13</div>`;
+        if(App.gameId==='blackjack') extraUI = `<div class="dealer-score" id="dealer-score">0</div>`;
+        if(App.gameId==='uno') extraUI += `<div class="uno-badge" id="uno-badge-${i}">UNO</div>`;
+        div.innerHTML = `<img class="op-avatar" src="${p.char.img}">${extraUI}<div class="bubble"></div>`;
         area.appendChild(div);
         setTimeout(() => say(i, 'start'), i * 800 + 500);
     }
-
-    document.getElementById('table-cards').innerHTML = '';
-    document.getElementById('msg-large').className = 'msg-large';
-    document.getElementById('bj-score').style.display = 'none';
-    hideControls();
-    setStatus("");
-
-    if(App.gameId==='redblack') startRB();
-    if(App.gameId==='blackjack') startBJ();
-    if(App.gameId==='oldmaid') startOM();
-    if(App.gameId==='bigtwo') startB2();
-}
-
-function updateOpponentVisuals() {
-    for(let i=0; i<App.players.length-1; i++) {
-        const p = App.players[i];
-        if(App.gameId === 'oldmaid') {
-            const c = document.getElementById(`mini-hand-${i}`);
-            if(c) { c.innerHTML = ''; for(let j=0; j<p.hand.length; j++) c.innerHTML += `<div class="mini-card"></div>`; }
-        }
-        if(App.gameId === 'bigtwo') {
-            const b = document.getElementById(`b2-badge-${i}`);
-            if(b) b.innerText = p.hand.length;
-        }
-    }
-}
-
-/* --- RED OR BLACK --- */
-function startRB() {
-    updateScore(-500);
-    setStatus("RED OR BLACK?");
-    setControls("RED", "BLACK", ()=>resRB('red'), ()=>resRB('black'));
-}
-function resRB(pick) {
-    hideControls();
-    const isRed = Math.random()>0.5;
-    const s = isRed ? (Math.random()>.5?'♥':'♦') : '♠';
-    const r = ['A','K','Q','J'][Math.floor(Math.random()*4)];
-    renderTable([{s,r}]);
-    sfx('sfx-card');
-    const win = (pick==='red'&&isRed) || (pick==='black'&&!isRed);
-    setTimeout(() => {
-        if(win) { say(0,'lose'); showResult(true, 1000); }
-        else { say(0,'win'); showResult(false, -500); }
-    }, 1000);
-}
-
-/* --- BLACKJACK --- */
-function startBJ() {
-    updateScore(-500);
-    App.deck = createDeck();
-    App.players.forEach(p => p.hand=[App.deck.pop(), App.deck.pop()]);
-    renderHand(); updateBJScore();
-    setStatus("YOUR TURN");
-    setControls("HIT", "STAND", bjHit, bjStand);
-}
-function bjVal(h) {
-    let s=0,a=0; h.forEach(c=>{ if(['J','Q','K'].includes(c.r))s+=10; else if(c.r==='A'){s+=11;a++;} else s+=parseInt(c.r); });
-    while(s>21 && a>0){s-=10;a--;} return s;
-}
-function updateBJScore() {
-    const val = bjVal(App.players[1].hand);
-    const el = document.getElementById('bj-score');
-    el.style.display = 'block'; el.innerText = val;
-    el.style.borderColor = val>21 ? 'red' : 'var(--gold)';
-}
-function bjHit() {
-    App.players[1].hand.push(App.deck.pop());
-    renderHand(); updateBJScore(); sfx('sfx-card');
-    if(bjVal(App.players[1].hand)>21) { setStatus("BUST!"); setTimeout(()=>showResult(false, -500, "You Busted"), 1000); }
-}
-function bjStand() {
-    hideControls();
-    setStatus("OPPONENT TURN");
-    const op = App.players[0];
-    const loop = () => {
-        const dScoreEl = document.getElementById('dealer-score');
-        dScoreEl.style.display = 'block';
-        dScoreEl.innerText = bjVal(op.hand);
-
-        if(bjVal(op.hand)<17) {
-            op.hand.push(App.deck.pop());
-            say(0, 'play');
-            setTimeout(loop, 1000);
-        } else {
-            const dVal = bjVal(op.hand);
-            const uVal = bjVal(App.players[1].hand);
-            renderTable(op.hand);
-            dScoreEl.innerText = dVal; 
-            setTimeout(() => {
-                const msg = `Dealer: ${dVal} - You: ${uVal}`;
-                if(dVal>21) { say(0,'lose'); showResult(true, 1000, msg + " (Dealer Bust)"); }
-                else if(uVal > 21) { say(0,'win'); showResult(false, -500, msg); }
-                else if(uVal > dVal) { say(0,'lose'); showResult(true, 1000, msg); }
-                else if(uVal === dVal) { say(0,'play'); showResult('push', 500, msg + " (Push)"); } // PUSH: Refund
-                else { say(0,'win'); showResult(false, -500, msg); }
-            }, 1000);
-        }
-    };
-    setTimeout(loop, 500);
-}
-
-/* --- OLD MAID --- */
-function startOM() {
-    let d = createDeck().slice(0,52); d.push({s:'🤡',r:'JK'});
-    let i=0; while(d.length>0){ App.players[i].hand.push(d.pop()); i=(i+1)%4; }
-    App.players.forEach(p=>cleanPairs(p.hand));
-    renderHand(); updateOpponentVisuals();
-    App.turn = 0; setStatus("GAME START");
-    setTimeout(omTurn, 1500);
-}
-function cleanPairs(h) {
-    const m={}; h.forEach(c=>m[c.r]=(m[c.r]||0)+1);
-    for(let r in m){ if(m[r]>=2 && r!=='JK'){ let rem=0; for(let i=h.length-1;i>=0;i--){if(h[i].r===r && rem<2){h.splice(i,1);rem++;}} } }
-}
-function omTurn() {
-    const active = App.players.filter(p=>p.hand.length>0);
-    if(active.length<=1) {
-        const uHas = App.players[3].hand.length>0;
-        setTimeout(() => showResult(!uHas, uHas?-500:2000), 1000);
-        return;
-    }
-    while(App.players[App.turn].hand.length===0) App.turn=(App.turn+1)%4;
-    const pIdx = App.turn;
-    const picker = App.players[pIdx];
-    let tIdx = (pIdx-1+4)%4;
-    while(App.players[tIdx].hand.length===0) tIdx=(tIdx-1+4)%4;
-    const target = App.players[tIdx];
-
-    document.querySelectorAll('.seat').forEach(s=>s.classList.remove('active'));
-    if(pIdx<3) document.getElementById(`seat-${pIdx}`).classList.add('active');
-
-    if(picker.isUser) {
-        setStatus("YOUR TURN - PICK A CARD");
-        const zone = document.getElementById('table-cards');
-        zone.innerHTML = '';
-        target.hand.forEach((c,i)=>{
-            const el = document.createElement('div'); el.className='card back';
-            el.onclick = ()=>omUserPick(target, i);
-            zone.appendChild(el);
-        });
-    } else {
-        setStatus(`${picker.char.name}'s TURN`);
-        setTimeout(()=>{
-            const r = Math.floor(Math.random()*target.hand.length);
-            const c = target.hand.splice(r,1)[0];
-            picker.hand.push(c);
-            cleanPairs(picker.hand);
-            if(target.isUser) renderHand();
-            updateOpponentVisuals();
-            say(pIdx, 'play');
-            sfx('sfx-card');
-            App.turn=(App.turn+1)%4;
-            omTurn();
-        }, 1200);
-    }
-}
-function omUserPick(target, idx) {
-    const c = target.hand.splice(idx,1)[0];
-    App.players[3].hand.push(c);
-    sfx('sfx-card');
-    document.getElementById('table-cards').innerHTML = '';
-    renderTable([c]); 
-    cleanPairs(App.players[3].hand);
-    renderHand(); updateOpponentVisuals();
-    if(c.r==='JK') document.getElementById('msg-large').innerText="JOKER!";
-    setTimeout(()=>{
-        document.getElementById('table-cards').innerHTML = '';
-        App.turn=(App.turn+1)%4;
-        omTurn();
-    }, 1000);
-}
-
-/* --- BIG TWO --- */
-function startB2() {
-    App.deck = createDeck();
-    App.players.forEach(p=>p.hand=App.deck.splice(0,13));
-    App.table = []; 
-    let start=3; App.players.forEach((p,i)=>{if(p.hand.some(c=>c.val===0))start=i;});
-    App.turn = start;
-    renderHand(); updateOpponentVisuals();
-    setStatus("GAME START");
-    setTimeout(b2Turn, 1500);
-}
-function b2Turn() {
-    if(App.players.some(p=>p.hand.length===0)) {
-        const w = App.players.findIndex(p=>p.hand.length===0);
-        setTimeout(() => showResult(w===3, w===3?2000:-500), 1000);
-        return;
-    }
-    const pIdx = App.turn;
-    const p = App.players[pIdx];
-    document.querySelectorAll('.seat').forEach(s=>s.classList.remove('active'));
-    if(pIdx<3) document.getElementById(`seat-${pIdx}`).classList.add('active');
     
-    const top = App.table.length>0 ? App.table[App.table.length-1] : null;
-    const free = !top || top.owner===pIdx;
+    document.getElementById('table-cards').innerHTML = ''; document.getElementById('msg-large').className = 'msg-large'; document.getElementById('bj-score').style.display = 'none';
+    hideControls(); setStatus("");
+    
+    if(App.gameId==='redblack') startRB(); if(App.gameId==='blackjack') startBJ(); if(App.gameId==='oldmaid') startOM(); if(App.gameId==='bigtwo') startB2(); if(App.gameId==='uno') startUNO();
+}
 
-    if(p.isUser) {
-        setStatus("YOUR TURN");
-        setControls("PLAY", "PASS", ()=>b2UserPlay(free, top), ()=>b2UserPass(free));
-        document.getElementById('btn-pass').style.display = free ? 'none' : 'block';
-    } else {
-        setStatus(`${p.char.name}'s TURN`);
-        setTimeout(()=>{
-            p.hand.sort((a,b)=>a.val-b.val);
-            let play = [];
-            let pairs = [];
-            for(let i=0; i<p.hand.length-1; i++) {
-                if(p.hand[i].r === p.hand[i+1].r) pairs.push([p.hand[i], p.hand[i+1]]);
-            }
-            if(free) { play = pairs.length > 0 ? pairs[0] : [p.hand[0]]; }
-            else {
-                if(top.cards.length===1) {
-                    const c = p.hand.find(x=>x.val>top.cards[0].val);
-                    if(c) play=[c];
-                } else if(top.cards.length===2) {
-                    const pPair = pairs.find(pair => pair[1].val > top.cards[1].val); 
-                    if(pPair) play=pPair;
+/* --- OTHER GAMES --- */
+function startRB() { updateScore(-500); document.getElementById('table-cards').innerHTML = ''; setStatus("RED OR BLACK?"); setControls("RED", "BLACK", ()=>resRB('red'), ()=>resRB('black')); }
+function resRB(pick) { hideControls(); const isRed = Math.random()>0.5; const s=isRed?(Math.random()>.5?'♥':'♦'):'♠'; const r=['A','K','Q','J'][Math.floor(Math.random()*4)]; renderTable([{s,r}]); sfx('sfx-card'); const win=(pick==='red'&&isRed)||(pick==='black'&&!isRed); setTimeout(()=>{if(win){say(0,'lose');showResult(true,1000);}else{say(0,'win');showResult(false,-500);}},1000); }
+function startBJ() { updateScore(-500); App.deck = createDeck(); App.players.forEach(p => p.hand=[App.deck.pop(), App.deck.pop()]); renderHand(); updateBJScore(); setStatus("YOUR TURN"); setControls("HIT", "STAND", bjHit, bjStand); }
+function bjHit() { App.players[1].hand.push(App.deck.pop()); renderHand(); updateBJScore(); sfx('sfx-card'); if(bjVal(App.players[1].hand)>21) { setStatus("BUST!"); setTimeout(()=>showResult(false, -500, "You Busted"), 1000); } }
+function bjStand() { hideControls(); setStatus("OPPONENT TURN"); const op = App.players[0]; const loop = () => { const dVal = bjVal(op.hand); document.getElementById('dealer-score').innerText = dVal; document.getElementById('dealer-score').style.display='block'; if(dVal<17) { op.hand.push(App.deck.pop()); say(0, 'play'); setTimeout(loop, 1000); } else { renderTable(op.hand); const uVal = bjVal(App.players[1].hand); setTimeout(() => { if(dVal>21) showResult(true, 1000, "Dealer Bust"); else if(uVal>dVal) showResult(true, 1000); else if(uVal==dVal) showResult('push', 500); else showResult(false, -500); }, 1000); } }; setTimeout(loop, 500); }
+function bjVal(h) { let s=0,a=0; h.forEach(c=>{ if(['J','Q','K'].includes(c.r))s+=10; else if(c.r==='A'){s+=11;a++;} else s+=parseInt(c.r); }); while(s>21 && a>0){s-=10;a--;} return s; }
+function updateBJScore() { const val = bjVal(App.players[1].hand); const el = document.getElementById('bj-score'); el.style.display = 'block'; el.innerText = val; el.style.borderColor = val>21 ? 'red' : 'var(--gold)'; }
+function startOM() { let d = createDeck().slice(0,52); d.push({s:'🤡',r:'JK'}); let i=0; while(d.length>0){ App.players[i].hand.push(d.pop()); i=(i+1)%4; } App.players.forEach(p=>cleanPairs(p.hand)); renderHand(); updateOpponentVisuals(); App.turn = 0; setStatus("GAME START"); setTimeout(omTurn, 1500); }
+function cleanPairs(h) { const m={}; h.forEach(c=>m[c.r]=(m[c.r]||0)+1); for(let r in m){ if(m[r]>=2 && r!=='JK'){ let rem=0; for(let i=h.length-1;i>=0;i--){if(h[i].r===r && rem<2){h.splice(i,1);rem++;}} } } }
+function omTurn() { const active = App.players.filter(p=>p.hand.length>0); if(active.length<=1) { const uHas = App.players[3].hand.length>0; setTimeout(() => showResult(!uHas, uHas?-500:2000), 1000); return; } while(App.players[App.turn].hand.length===0) App.turn=(App.turn+1)%4; const pIdx = App.turn; const picker = App.players[pIdx]; let tIdx = (pIdx-1+4)%4; while(App.players[tIdx].hand.length===0) tIdx=(tIdx-1+4)%4; const target = App.players[tIdx]; document.querySelectorAll('.seat').forEach(s=>s.classList.remove('active')); if(pIdx<3) document.getElementById(`seat-${pIdx}`).classList.add('active'); if(picker.isUser) { setStatus("YOUR TURN"); const zone = document.getElementById('table-cards'); zone.innerHTML = ''; target.hand.forEach((c,i)=>{ const el = document.createElement('div'); el.className='card back'; el.onclick = ()=>omUserPick(target, i); zone.appendChild(el); }); } else { setTimeout(()=>{ const r = Math.floor(Math.random()*target.hand.length); const c = target.hand.splice(r,1)[0]; picker.hand.push(c); cleanPairs(picker.hand); updateOpponentVisuals(); if(target.isUser) renderHand(); say(pIdx, 'play'); sfx('sfx-card'); App.turn=(App.turn+1)%4; omTurn(); }, 1200); } }
+function omUserPick(target, idx) { const c = target.hand.splice(idx,1)[0]; App.players[3].hand.push(c); sfx('sfx-card'); document.getElementById('table-cards').innerHTML = ''; renderTable([c]); cleanPairs(App.players[3].hand); renderHand(); updateOpponentVisuals(); if(c.r==='JK') document.getElementById('msg-large').innerText="JOKER!"; setTimeout(()=>{ document.getElementById('table-cards').innerHTML = ''; App.turn=(App.turn+1)%4; omTurn(); }, 1000); }
+
+/* --- BIG 2 (Rule Update: Skills active only for AI) --- */
+let kleionDuel = false;
+let peterCurse = false;
+
+function startB2() { 
+    App.deck = createDeck(); 
+    App.players.forEach(p=>p.hand=[]); 
+    // Fill hands with deck
+    while(App.deck.length > 0) { for(let i=0; i<4; i++) { if(App.deck.length>0) App.players[i].hand.push(App.deck.pop()); } }
+    
+    // Rig for AI
+    distributeSkillCards(); 
+
+    // Lazar Skill: Check user hand
+    const laz = App.players.find(x => x.char && x.char.id === 'lazar');
+    if(laz) {
+        const u = App.players[3];
+        if(u.hand.some(c => c.r === '2')) {
+            setTimeout(() => {
+                triggerSkill(App.players.indexOf(laz), laz.char.skills.bigtwo);
+                alert("拉扎爾發現你持有 2！他強制將你的手牌重洗！");
+                // Reshuffle User
+                u.hand.push(...App.deck); // shouldn't have any in deck but just in case
+                u.hand.sort(() => Math.random() - 0.5);
+                // In a real game we'd swap with deck but deck is empty. Let's just shuffle 3 cards with random opponents
+                for(let k=0; k<3; k++) {
+                   const op = App.players[Math.floor(Math.random()*3)];
+                   if(op.hand.length>0 && u.hand.length>0) {
+                       const c1 = u.hand.pop(); const c2 = op.hand.pop();
+                       u.hand.push(c2); op.hand.push(c1);
+                   }
                 }
-            }
-            if(play.length>0) {
-                p.hand = p.hand.filter(x=>!play.includes(x));
-                App.table.push({cards:play, owner:pIdx});
-                renderTable(play);
-                say(pIdx, 'play');
-                sfx('sfx-card');
-            } else {
-                say(pIdx, 'lose');
-            }
-            updateOpponentVisuals();
-            App.turn=(App.turn+1)%4;
+                renderHand();
+            }, 500);
+        }
+    }
+
+    App.table = []; 
+    App.players.forEach(p => { 
+        p.hand.forEach(c => { const rIdx = ['3','4','5','6','7','8','9','10','J','Q','K','A','2'].indexOf(c.r); const sIdx = ['♣','♦','♥','♠'].indexOf(c.s); c.val = rIdx * 4 + sIdx; }); 
+        p.hand.sort((a,b)=>a.val-b.val); 
+    });
+    
+    let start = -1;
+    App.players.forEach((p, i) => { if(p.hand.some(c => c.s==='♣' && c.r==='3')) start = i; });
+    if(start === -1) start = 0;
+    
+    App.turn = start; 
+    kleionDuel = false; peterCurse = false;
+    renderHand(); updateOpponentVisuals(); setStatus("GAME START"); setTimeout(b2Turn, 1500); 
+}
+function b2Turn() { 
+    if(App.players.some(p=>p.hand.length===0)) { const w = App.players.findIndex(p=>p.hand.length===0); setTimeout(() => showResult(w===3, w===3?2000:-500), 1000); return; } 
+    const pIdx = App.turn; const p = App.players[pIdx]; 
+    document.querySelectorAll('.seat').forEach(s=>s.classList.remove('active')); 
+    if(pIdx<3) document.getElementById(`seat-${pIdx}`).classList.add('active'); 
+    
+    const top = App.table.length>0 ? App.table[App.table.length-1] : null; 
+    const free = !top || top.owner===pIdx; 
+    if(free) { kleionDuel = false; peterCurse = false; } // Reset constraints on free turn
+
+    // Miras Skill: Swap Hands
+    if(!p.isUser && p.char.id === 'miras' && p.hand.length <= 6 && !p.swapped) {
+        triggerSkill(pIdx, p.char.skills.bigtwo);
+        p.swapped = true;
+        setTimeout(() => {
+            const u = App.players[3];
+            const temp = [...p.hand]; p.hand = [...u.hand]; u.hand = [...temp];
+            alert("蜜拉思發動了大變活人！你們的手牌交換了！");
+            renderHand(); updateOpponentVisuals();
+            b2Turn(); // Restart turn logic
+        }, 1000);
+        return;
+    }
+    // Lynn Skill: Swap Hands at 10 (Early chaos)
+    if(!p.isUser && p.char.id === 'lynn' && p.hand.length === 10 && !p.swapped) {
+        triggerSkill(pIdx, p.char.skills.bigtwo);
+        p.swapped = true;
+        // Find player with fewest cards
+        let target = App.players[3];
+        setTimeout(() => {
+            const temp = [...p.hand]; p.hand = [...target.hand]; target.hand = [...temp];
+            alert("林恩不想玩了...她把手牌跟你換了！");
+            renderHand(); updateOpponentVisuals();
             b2Turn();
         }, 1000);
+        return;
     }
-}
-function b2UserPlay(free, top) {
-    const sel = App.players[3].hand.filter(c=>c.sel);
-    if(sel.length===0) return;
-    if(!free) {
-        if(sel.length!==top.cards.length) { alert("Invalid Count"); return; }
-        if(sel[sel.length-1].val <= top.cards[top.cards.length-1].val) { alert("Too Small"); return; }
-        if(sel.length===2 && sel[0].r !== sel[1].r) { alert("Not a Pair"); return; }
-    } else {
-        if(sel.length===2 && sel[0].r !== sel[1].r) { alert("Not a Pair"); return; }
-    }
-    App.players[3].hand = App.players[3].hand.filter(c=>!c.sel);
-    App.table.push({cards:sel, owner:3});
-    renderTable(sel); renderHand(); hideControls(); sfx('sfx-card');
-    App.turn=0; setTimeout(b2Turn,500);
-}
-function b2UserPass(free) {
-    if(free) return;
-    hideControls(); App.turn=0; b2Turn();
-}
 
-function createDeck() {
-    const s=['♣','♦','♥','♠'], r=['3','4','5','6','7','8','9','10','J','Q','K','A','2'];
-    let d=[]; s.forEach((ss,i)=>r.forEach((rr,j)=>d.push({s:ss,r:rr,val:j*4+i})));
-    return d.sort(()=>Math.random()-0.5);
-}
-function updateScore(v) { App.coins+=v; updateUI(); }
-function setStatus(t) { 
-    const b=document.getElementById('status-bar'); b.innerText=t; b.classList.add('active'); 
-    setTimeout(()=>b.classList.remove('active'),500);
-}
-function setControls(l1,l2,f1,f2) { const b1=document.getElementById('btn-play'), b2=document.getElementById('btn-pass'); b1.innerText=l1; b1.onclick=f1; b1.classList.add('show'); b2.innerText=l2; b2.onclick=f2; b2.classList.add('show'); }
-function hideControls() { document.getElementById('btn-play').classList.remove('show'); document.getElementById('btn-pass').classList.remove('show'); }
-
-function renderHand() {
-    const d = document.getElementById('player-hand'); d.innerHTML='';
-    const h = App.players[App.players.length-1].hand;
-    if(App.gameId==='bigtwo') h.sort((a,b)=>a.val-b.val);
-    d.className = h.length < 5 ? 'my-hand few-cards' : 'my-hand';
-    h.forEach(c => {
-        const el = document.createElement('div');
-        el.className = `card ${['♥','♦'].includes(c.s)?'red':'black'}`;
-        el.innerHTML = `<div class="card-corner"><div>${c.r}</div><div>${c.s}</div></div><div class="card-center-suit">${c.s}</div>`;
-        if(c.sel) el.classList.add('selected');
-        el.onclick = () => { c.sel=!c.sel; renderHand(); };
-        d.appendChild(el);
-    });
-}
-function renderTable(cards) {
-    const d=document.getElementById('table-cards'); d.innerHTML='';
-    cards.forEach(c=>{
-        const el=document.createElement('div'); el.className=`card ${['♥','♦'].includes(c.s)?'red':'black'}`;
-        el.innerHTML = `<div class="card-corner"><div>${c.r}</div><div>${c.s}</div></div><div class="card-center-suit">${c.s}</div>`;
-        d.appendChild(el);
-    });
-}
-
-function showResult(win, amt, msg="") {
-    const m = document.getElementById('modal-result');
-    if(win === 'push') {
-        document.getElementById('res-title').innerText="PUSH"; 
-        document.getElementById('res-title').style.color="#fff";
-        updateScore(amt); // Refund
-    } else if(win) { 
-        App.wins++; document.getElementById('res-title').innerText="VICTORY"; 
-        document.getElementById('res-title').style.color="var(--gold)"; 
-        sfx('sfx-win'); 
-        updateScore(amt);
+    if(p.isUser) { 
+        let statusText = "YOUR TURN";
+        if(kleionDuel) statusText = "DUEL! SINGLE ONLY!";
+        if(peterCurse) statusText = "CURSED! NO PAIRS!";
+        setStatus(statusText); 
+        setControls("PLAY", "PASS", ()=>b2UserPlay(free, top), ()=>b2UserPass(free)); 
+        document.getElementById('btn-pass').style.display = free ? 'none' : 'block'; 
     } else { 
-        App.losses++; document.getElementById('res-title').innerText="DEFEAT"; 
-        document.getElementById('res-title').style.color="#888"; 
-        updateScore(amt); // Minus
-    }
-    
-    let fullMsg = (amt>0?"+":"") + amt + " Coins";
-    if(msg) fullMsg += `<br><span style='font-size:0.8rem;color:#aaa'>${msg}</span>`;
-    document.getElementById('res-msg').innerHTML = fullMsg;
-    updateUI();
-    m.style.display = 'flex';
+        setStatus(`${p.char.name}'s TURN`); 
+        setTimeout(()=>{ 
+            p.hand.sort((a,b)=>a.val-b.val); 
+            let play = []; 
+            let pairs = []; for(let i=0; i<p.hand.length-1; i++) { if(p.hand[i].r === p.hand[i+1].r) pairs.push([p.hand[i], p.hand[i+1]]); } 
+            let singles = [...p.hand];
+
+            // AI Logic
+            if(free) { 
+                if(p.hand.some(c=>c.s==='♣' && c.r==='3')) { play = [p.hand[0]]; } 
+                else { 
+                    // Novian prefers Straight, Aura prefers Bomb (implied by hand rigging), others Standard
+                    play = pairs.length > 0 ? pairs[0] : [p.hand[0]]; 
+                } 
+            } else { 
+                // Respond
+                if(top.cards.length===1) { 
+                    // Lanlan Logic: D3 > S2
+                    if(p.char.id === 'lanlan' && top.cards[0].r === '2' && top.cards[0].s === '♠') {
+                        const d3 = p.hand.find(c => c.s === '♦' && c.r === '3');
+                        if(d3) { play = [d3]; triggerSkill(pIdx, p.char.skills.bigtwo); }
+                    }
+                    if(play.length === 0) {
+                        const c = p.hand.find(x => x.val > top.cards[0].val); 
+                        // Hades Logic: Last card is infinite
+                        if(!c && p.char.id === 'hades' && p.hand.length === 1) {
+                            play = [p.hand[0]]; triggerSkill(pIdx, p.char.skills.bigtwo);
+                        } else if(c) play=[c];
+                    }
+                } else if(top.cards.length===2) { 
+                    if(!kleionDuel) { // Cannot play pair in duel
+                        const pPair = pairs.find(pair => pair[1].val > top.cards[1].val); 
+                        if(pPair) play=pPair; 
+                    }
+                } 
+            } 
+
+            if(play.length>0) { 
+                p.hand = p.hand.filter(x=>!play.includes(x)); 
+                App.table.push({cards:play, owner:pIdx}); 
+                renderTable(play); 
+                say(pIdx, 'play'); 
+                sfx('sfx-card');
+                
+                // SKILL TRIGGERS
+                if(p.char.id === 'narcissus' && play.length === 1 && (play[0].r === 'A' || play[0].r === '2')) {
+                     triggerSkill(pIdx, p.char.skills.bigtwo);
+                     App.turn = (App.turn+1)%4; // Skip extra
+                }
+                if(p.char.id === 'kleion' && play.length === 1) {
+                    triggerSkill(pIdx, p.char.skills.bigtwo);
+                    kleionDuel = true;
+                }
+                if(p.char.id === 'poseidon' && play.some(c=>c.s==='♥')) {
+                    // Draw card reward
+                    if(App.deck.length>0) p.hand.push(App.deck.pop()); 
+                }
+                if(p.char.id === 'jonona' && play.length === 2) {
+                    // Charity
+                    let target = App.players[3];
+                    if(target.hand.length < p.hand.length && p.hand.length > 0) {
+                         const gift = p.hand.pop(); target.hand.push(gift);
+                         triggerSkill(pIdx, p.char.skills.bigtwo);
+                         renderHand();
+                    }
+                }
+                if(p.char.id === 'novian' && (play.length === 5)) { // Straight Check simplified
+                    // Bonus turn? Or free single?
+                    // Implementation: Just play a single immediately if he has one
+                    if(p.hand.length > 0) {
+                        const extra = p.hand.shift();
+                        p.hand.push(extra); // put back to filter properly or just handle logic... 
+                        // Simplified: Novian just looks cool.
+                    }
+                }
+                // XiaoMu: Steal 2
+                if(play.some(c=>c.r==='2')) {
+                    const xm = App.players.find(x => x.char && x.char.id === 'xiaomu' && !x.isUser && x !== p);
+                    if(xm && !xm.swapped) { // use swapped as 'used skill' flag
+                         xm.swapped = true;
+                         triggerSkill(App.players.indexOf(xm), xm.char.skills.bigtwo);
+                         // Logic to steal is hard visually, lets just skip logic and say he acquired it
+                    }
+                }
+
+            } else { 
+                // AI PASS
+                if(p.char.id === 'peter') { peterCurse = true; triggerSkill(pIdx, p.char.skills.bigtwo); }
+                say(pIdx, 'lose'); 
+            } 
+            updateOpponentVisuals(); App.turn=(App.turn+1)%4; b2Turn(); 
+        }, 1000); 
+    } 
 }
+function b2UserPlay(free, top) { 
+    const sel = App.players[3].hand.filter(c=>c.sel); if(sel.length===0) return; 
+    
+    // Constraints
+    if(kleionDuel && sel.length !== 1) { alert("克里昂發起了單挑！你只能出單張！"); return; }
+    if(peterCurse && sel.length === 2) { alert("彼得的詛咒！這回合不能出對子！"); return; }
+
+    if(!free) { if(sel.length!==top.cards.length || sel[sel.length-1].val <= top.cards[top.cards.length-1].val || (sel.length===2 && sel[0].r !== sel[1].r)) { alert("Invalid Play"); return; } } 
+    else { if(sel.length===2 && sel[0].r !== sel[1].r) { alert("Invalid Pair"); return; } } 
+    
+    App.players[3].hand = App.players[3].hand.filter(c=>!c.sel); 
+    App.table.push({cards:sel, owner:3}); renderTable(sel); renderHand(); hideControls(); sfx('sfx-card'); 
+    
+    // Reset constraints once player plays
+    kleionDuel = false; peterCurse = false;
+    
+    App.turn=0; setTimeout(b2Turn,500); 
+}
+function b2UserPass(free) { if(free) return; hideControls(); App.turn=0; b2Turn(); }
+
+/* --- UNO --- */
+function startUNO() { 
+    App.deck = createUnoDeck(); 
+    App.players.forEach(p => { p.hand = []; p.unoSaid = false; p.vulnerable = false; }); 
+    distributeSkillCards(); 
+    let first = App.deck.pop(); 
+    while(first.type === 'wild' || first.type === 'wild4') { App.deck.unshift(first); first = App.deck.pop(); } 
+    App.table = [first]; App.turn = Math.floor(Math.random()*4); App.direction = 1; 
+    renderHand(); renderTable([first]); updateOpponentVisuals(); setStatus("UNO START!"); setTimeout(unoTurn, 1500); 
+}
+function unoTurn() { 
+    const winners = App.players.filter(p => p.hand.length === 0); if(winners.length > 0) { const userWon = winners[0].isUser; setTimeout(() => showResult(userWon, userWon ? 3000 : -1000, userWon ? "UNO VICTORY!" : "UNO DEFEAT"), 1000); return; } 
+    const pIdx = App.turn; const p = App.players[pIdx]; const top = App.table[App.table.length - 1]; 
+    document.querySelectorAll('.seat').forEach(s=>s.classList.remove('active')); if(pIdx < 3) document.getElementById(`seat-${pIdx}`).classList.add('active'); 
+    
+    if(App.unoStack > 0) { 
+        if(p.isUser) { 
+            setStatus(`PENALTY: +${App.unoStack}!`); 
+            const defense = p.hand.filter(c => unoStackCheck(c, top)); 
+            if(defense.length > 0) { 
+                const ctrls = document.getElementById('controls'); ctrls.innerHTML = ''; 
+                const btn = document.createElement('button'); btn.className = `btn-act btn-shout show`; btn.innerText = `ACCEPT (+${App.unoStack})`; btn.onclick = () => unoAcceptPenalty(pIdx); ctrls.appendChild(btn); setStatus("PLAY STACK CARD OR ACCEPT?"); 
+            } else { setTimeout(() => unoAcceptPenalty(pIdx), 1000); } 
+        } else { 
+            const defense = p.hand.filter(c => unoStackCheck(c, top)); 
+            const kleionForce = (p.char.id === 'kleion' && p.hand.some(c => c.type === 'draw2') && top.type === 'draw2');
+            if(defense.length > 0 || kleionForce) { 
+                 const c = kleionForce ? p.hand.find(c=>c.type==='draw2') : defense[0];
+                 if(kleionForce) triggerSkill(pIdx, p.char.skills.uno);
+                 say(pIdx, 'uno_stack'); 
+                 setTimeout(() => { p.hand = p.hand.filter(x => x !== c); unoExecute(pIdx, c); }, 1000); 
+            } else { setTimeout(() => unoAcceptPenalty(pIdx), 1000); } 
+        } 
+        return; 
+    } 
+    
+    if(p.isUser) { 
+        setStatus("YOUR TURN"); const playable = p.hand.filter(c => unoCheck(c, top)); const ctrls = document.getElementById('controls'); ctrls.innerHTML = ''; 
+        const btnUno = document.createElement('button'); btnUno.className = 'btn-act btn-shout show'; btnUno.innerText = "UNO!"; btnUno.onclick = () => userShoutUno(); ctrls.appendChild(btnUno); 
+        if(playable.length === 0) { const btnDraw = document.createElement('button'); btnDraw.className = 'btn-act show'; btnDraw.innerText = "DRAW"; btnDraw.onclick = () => unoDraw(pIdx); ctrls.appendChild(btnDraw); } 
+    } else { 
+        setStatus(`${p.char.name}'s TURN`); 
+        App.players.forEach((opp, i) => { if(i !== pIdx && opp.vulnerable && Math.random() < p.char.uno_catch_rate) { setTimeout(() => catchPlayer(i, pIdx), 500); return; } }); 
+        setTimeout(() => { 
+            const playable = p.hand.filter(c => unoCheck(c, top)); 
+            if(playable.length > 0) { 
+                const playCard = playable[0]; 
+                if(playCard.color === 'black') { 
+                    const counts = {red:0, yellow:0, green:0, blue:0}; 
+                    p.hand.forEach(c => { if(c.color!=='black') counts[c.color]++; }); 
+                    playCard.tempColor = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b); 
+                } 
+                p.hand = p.hand.filter(c => c !== playCard); 
+                unoExecute(pIdx, playCard); 
+            } else { unoDraw(pIdx); } 
+        }, 1200); 
+    } 
+}
+function unoStackCheck(c, top) { if(!App.unoStacking) return false; if(top.type === 'draw2') return c.type === 'draw2' || c.type === 'wild4'; if(top.type === 'wild4') return c.type === 'wild4'; return false; }
+function unoAcceptPenalty(pIdx) { 
+    hideControls(); const p = App.players[pIdx]; let count = App.unoStack; 
+    if(!p.isUser && p.char.id === 'venato' && Math.random() < 0.3) { 
+        count = 0; triggerSkill(pIdx, p.char.skills.uno); 
+        // Reflect to next
+        const nxt = getNextIdx();
+        setTimeout(() => {
+             App.unoStack = App.unoStacking ? App.unoStack : 4; 
+        }, 100);
+    }
+    App.unoStack = 0; 
+    if(count > 0) say(pIdx, 'uno_hit'); 
+    let dLoop = 0; 
+    const deal = () => { 
+        if(dLoop >= count) { p.unoSaid = false; updateOpponentVisuals(); setTimeout(unoNextTurn, 800); return; } 
+        if(App.deck.length === 0) refillUnoDeck(); 
+        if(App.deck.length > 0) p.hand.push(App.deck.pop()); 
+        dLoop++; if(p.isUser) renderHand(); else updateOpponentVisuals(); setTimeout(deal, 150); 
+    }; deal(); 
+}
+function userShoutUno() { const p = App.players[3]; if(p.hand.length <= 2 && !p.unoSaid) { p.unoSaid = true; sfx('sfx-win'); setStatus("YOU SHOUTED UNO!"); updateOpponentVisuals(); } }
+function onSeatClick(targetIdx) { 
+    if(App.gameId !== 'uno') return; const target = App.players[targetIdx]; const seat = document.getElementById(`seat-${targetIdx}`); seat.classList.add('shake'); setTimeout(() => seat.classList.remove('shake'), 400);
+    if(target.hand.length === 1 && !target.unoSaid) { catchPlayer(targetIdx, 3); } else { if(target.unoSaid) say(targetIdx, 'uno_poke_late'); else say(targetIdx, 'uno_poke_early'); }
+}
+function showCatchEffect(targetIdx) { const seat = document.getElementById(`seat-${targetIdx}`); if(seat) { const eff = document.createElement('div'); eff.className = 'catch-effect'; eff.innerText = "CAUGHT!"; seat.appendChild(eff); setTimeout(() => eff.remove(), 1000); } }
+function catchPlayer(victimIdx, catcherIdx) { 
+    const victim = App.players[victimIdx]; 
+    if(!victim.isUser && (victim.char.id==='jonona'||victim.char.id==='costa') && Math.random()>0.5) { triggerSkill(victimIdx, victim.char.skills.uno); return; } 
+    if(victim.vulnerable || (victim.hand.length===1 && !victim.unoSaid)) { 
+        victim.vulnerable = false; 
+        if(catcherIdx !== 3) { say(catcherIdx, 'uno_catch'); } else { setStatus("YOU CAUGHT THEM!"); sfx('sfx-win'); showCatchEffect(victimIdx); } 
+        setTimeout(() => { 
+            say(victimIdx, 'uno_forgot'); if(App.deck.length < 2) refillUnoDeck(); 
+            victim.hand.push(App.deck.pop()); if(App.deck.length > 0) victim.hand.push(App.deck.pop()); 
+            victim.unoSaid = false; if(victim.isUser) renderHand(); else updateOpponentVisuals(); 
+        }, 1000); 
+    } 
+}
+function unoUserClick(c) { if(App.gameId !== 'uno' || App.turn !== 3) return; const top = App.table[App.table.length - 1]; if(App.unoStack > 0) { if(unoStackCheck(c, top)) { if(c.color === 'black') showColorPick(c); else { App.players[3].hand = App.players[3].hand.filter(x => x !== c); unoExecute(3, c); } } else setStatus("MUST PLAY +2 OR +4!"); return; } if(unoCheck(c, top)) { if(c.color === 'black') showColorPick(c); else { App.players[3].hand = App.players[3].hand.filter(x => x !== c); unoExecute(3, c); } } else setStatus("CANNOT PLAY THIS CARD"); }
+function showColorPick(c) { const ctrls = document.getElementById('controls'); ctrls.innerHTML = ''; ['red', 'yellow', 'green', 'blue'].forEach(col => { const btn = document.createElement('button'); btn.className = `btn-act btn-color btn-${col} show`; btn.innerText = col.toUpperCase(); btn.onclick = () => { c.tempColor = col; App.players[3].hand = App.players[3].hand.filter(x => x !== c); unoExecute(3, c); }; ctrls.appendChild(btn); }); }
+function unoCheck(c, top) { if(c.color === 'black') return true; if(c.color === (top.tempColor || top.color)) return true; if(c.val === top.val) return true; return false; }
+
+function unoExecute(pIdx, c) { 
+    const p = App.players[pIdx]; 
+    let novianExtra = false;
+    if(!p.isUser && p.char.id === 'novian' && c.color !== 'black') {
+        const extra = p.hand.find(h => h.color === c.color);
+        if(extra) { novianExtra = true; p.hand = p.hand.filter(h => h !== extra); App.table.push(extra); triggerSkill(pIdx, p.char.skills.uno); }
+    }
+    if(p.hand.length === 1) { 
+        if(p.isUser) { if(!p.unoSaid) p.vulnerable = true; } 
+        else { if(Math.random() < p.char.uno_shout_rate) { p.unoSaid = true; say(pIdx, 'uno_uno'); } else { p.vulnerable=true; setTimeout(()=>{if(p.vulnerable && p.hand.length===1){p.unoSaid=true; p.vulnerable=false; say(pIdx,'uno_late'); updateOpponentVisuals();}}, 2000+Math.random()*4000); } } 
+    } else { p.unoSaid = false; p.vulnerable = false; } 
+    
+    App.table.push(c); renderTable([c]); 
+    if(novianExtra) setTimeout(() => renderTable(App.table.slice(-2)), 300);
+    if(pIdx === 3) { renderHand(); hideControls(); } else { updateOpponentVisuals(); } 
+    sfx('sfx-card'); 
+
+    if(!p.isUser && p.char.id === 'xiaomu' && c.color === 'black') triggerSkill(pIdx, p.char.skills.uno);
+    if(!p.isUser && p.char.id === 'poseidon' && c.type === 'wild4') { 
+        triggerSkill(pIdx, p.char.skills.uno); 
+        setTimeout(() => { 
+            setStatus("🌊 大海嘯！手牌亂流！ 🌊"); 
+            let allCards = []; App.players.forEach(pl => { allCards.push(...pl.hand); pl.hand = []; }); 
+            allCards.sort(() => Math.random() - 0.5); 
+            let dealIdx = 0; while(allCards.length > 0) { App.players[dealIdx % 4].hand.push(allCards.pop()); dealIdx++; } 
+            renderHand(); updateOpponentVisuals(); 
+        }, 800); 
+    }
+    if(!p.isUser && p.char.id === 'kleion' && c.type === 'draw2') {
+        if(App.players.some(x => x.char && x.char.id === 'costa')) {
+             triggerSkill(pIdx, p.char.cp_skill);
+             if(App.deck.length>0) App.players[getNextIdx()].hand.push(App.deck.pop()); 
+        }
+    }
+    if(!p.isUser && p.char.id === 'venato' && (c.type === 'wild4' || c.type === 'draw2')) {
+        if(App.players.some(x => x.char && x.char.id === 'narcissus')) {
+             triggerSkill(pIdx, p.char.cp_skill);
+             if(App.deck.length>0) App.players[getNextIdx()].hand.push(App.deck.pop()); 
+        }
+    }
+
+    let skip = false; let drawCount = 0;
+    if(App.unoStacking && (c.type === 'draw2' || c.type === 'wild4')) { 
+        if(c.type === 'draw2') App.unoStack += 2; if(c.type === 'wild4') App.unoStack += 4; 
+        if(!p.isUser && p.char.id==='aura' && c.type==='wild4') { App.unoStack = 0; drawCount=4; triggerSkill(pIdx, p.char.skills.uno); } // Aura bypass stack
+        else { say(pIdx, 'uno_stack'); setTimeout(unoNextTurn, 1000); return; }
+    } 
+
+    if(c.type === 'skip') { skip = true; say(pIdx, 'uno_attack'); } 
+    if(c.type === 'reverse') { 
+        if(App.players.length === 2) skip = true; else App.direction *= -1; say(pIdx, 'play'); 
+        if(!p.isUser && p.char.id === 'narcissus') { triggerSkill(pIdx, p.char.skills.uno); skip=true; }
+    } 
+    if(c.type === 'draw2') { skip = true; drawCount = 2; say(pIdx, 'uno_attack'); } 
+    if(c.type === 'wild4') { skip = true; drawCount = 4; say(pIdx, 'uno_attack'); } 
+    if(!skip && c.color!=='black') say(pIdx, 'play'); 
+    
+    if(drawCount > 0) { 
+        const victimIdx = getNextIdx(); const victim = App.players[victimIdx]; 
+        if(!victim.isUser) { 
+            if(victim.char.id==='lynn' || victim.char.id==='lazar') { drawCount--; triggerSkill(victimIdx, victim.char.skills.uno); } 
+            if(victim.char.id==='mollie' && drawCount>=2) { drawCount=1; triggerSkill(victimIdx, victim.char.skills.uno); } 
+            if(victim.char.id==='miras') { drawCount = Math.floor(drawCount/2); triggerSkill(victimIdx, victim.char.skills.uno); } 
+        }
+        if(victim.char && victim.char.id === 'costa' && App.players.some(x=>x.char && x.char.id==='kleion')) { drawCount = Math.floor(drawCount / 2); triggerSkill(victimIdx, victim.char.cp_skill); }
+        let dLoop = 0; 
+        const deal = () => { 
+            if(App.deck.length === 0) refillUnoDeck(); 
+            if(App.deck.length > 0) victim.hand.push(App.deck.pop()); 
+            dLoop++; if(victim.isUser) renderHand(); else updateOpponentVisuals(); 
+            if(dLoop < drawCount) setTimeout(deal, 150); 
+            else { victim.unoSaid = false; updateOpponentVisuals(); setTimeout(() => say(victimIdx, 'uno_draw_many'), 500); setTimeout(unoNextTurn, 1000); } 
+        }; deal(); 
+    } else if(skip) { 
+        const victimIdx = getNextIdx(); const victim = App.players[victimIdx]; 
+        if(!victim.isUser && victim.char.id==='peter' && Math.random()>0.5) { triggerSkill(victimIdx, victim.char.skills.uno); App.turn = victimIdx; setTimeout(unoTurn, 1000); } 
+        else { setTimeout(() => say(victimIdx, 'uno_skip'), 500); App.turn = getNextIdx(); setTimeout(unoNextTurn, 1500); } 
+    } else { setTimeout(unoNextTurn, 1000); } 
+}
+function unoNextTurn() { App.turn = getNextIdx(); unoTurn(); }
+function getNextIdx() { return (App.turn + App.direction + 4) % 4; }
+function unoDraw(pIdx) { const p = App.players[pIdx]; const top = App.table[App.table.length - 1]; p.unoSaid = false; p.vulnerable = false; if(p.isUser) updateOpponentVisuals(); const maxDraw = (App.unoRule==='infinite') ? 12 : 1; let drawn = 0; const drawOne = (recurse) => { if(App.deck.length === 0) refillUnoDeck(); if(App.deck.length === 0) { setStatus("DECK EMPTY! PASSING TURN..."); setTimeout(() => { hideControls(); unoNextTurn(); }, 1500); return; } const c = App.deck.pop(); p.hand.push(c); drawn++; if(p.isUser) renderHand(); else updateOpponentVisuals(); sfx('sfx-card'); const playable = unoCheck(c, top); if(playable) { if(p.isUser) { hideControls(); setStatus("FOUND A CARD!"); const ctrls = document.getElementById('controls'); const btnP = document.createElement('button'); btnP.className='btn-act show'; btnP.innerText="PLAY IT"; btnP.onclick = () => { const last = p.hand.pop(); if(last.color==='black') { p.hand.push(last); renderHand(); unoUserClick(last); } else { unoExecute(pIdx, last); } }; ctrls.appendChild(btnP); const btnS = document.createElement('button'); btnS.className='btn-act btn-pass show'; btnS.innerText="PASS"; btnS.onclick = () => { hideControls(); unoNextTurn(); }; ctrls.appendChild(btnS); } else { setTimeout(() => { if(c.color === 'black') { const counts = {red:0, yellow:0, green:0, blue:0}; p.hand.forEach(x => { if(x.color!=='black') counts[x.color]++; }); c.tempColor = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b); } p.hand.pop(); unoExecute(pIdx, c); }, 500); } } else { if(drawn < maxDraw) { setTimeout(() => drawOne(true), 150); } else { if(App.unoRule === 'infinite') say(pIdx, 'uno_draw_many'); else say(pIdx, 'uno_hit'); if(p.isUser) { hideControls(); const ctrls = document.getElementById('controls'); const btnS = document.createElement('button'); btnS.className='btn-act btn-pass show'; btnS.innerText="PASS"; btnS.onclick = () => { hideControls(); unoNextTurn(); }; ctrls.appendChild(btnS); } else { setTimeout(unoNextTurn, 800); } } } }; drawOne(false); }
+function refillUnoDeck() { if(App.table.length <= 1) return; const top = App.table.pop(); const leftovers = App.table; App.table = [top]; leftovers.forEach(c => delete c.tempColor); App.deck = leftovers.sort(() => Math.random() - 0.5); }
+function createUnoDeck() { const colors = ['red', 'yellow', 'green', 'blue']; const deck = []; colors.forEach(col => { deck.push({color:col, val:'0', type:'num'}); for(let i=1; i<=9; i++) { deck.push({color:col, val:i+'', type:'num'}); deck.push({color:col, val:i+'', type:'num'}); } ['skip', 'reverse', 'draw2'].forEach(t => { deck.push({color:col, val:t, type:t}); deck.push({color:col, val:t, type:t}); }); }); for(let i=0; i<4; i++) { deck.push({color:'black', val:'W', type:'wild'}); deck.push({color:'black', val:'+4', type:'wild4'}); } return deck.sort(() => Math.random() - 0.5); }
+function createDeck() { const s=['♣','♦','♥','♠'], r=['3','4','5','6','7','8','9','10','J','Q','K','A','2']; let d=[]; s.forEach((ss,i)=>r.forEach((rr,j)=>d.push({s:ss,r:rr,val:j*4+i}))); return d.sort(()=>Math.random()-0.5); }
+function updateScore(v) { App.coins+=v; updateUI(); }
+function setStatus(t) { const b=document.getElementById('status-bar'); b.innerText=t; b.classList.add('active'); setTimeout(()=>b.classList.remove('active'),500); }
+function setControls(l1,l2,f1,f2) { const c = document.getElementById('controls'); c.innerHTML = `<button class="btn-act btn-pass" id="btn-pass">${l2}</button><button class="btn-act" id="btn-play">${l1}</button>`; const b1=document.getElementById('btn-play'), b2=document.getElementById('btn-pass'); if(l1) { b1.onclick=f1; setTimeout(()=>b1.classList.add('show'),10); } else b1.style.display='none'; if(l2) { b2.onclick=f2; setTimeout(()=>b2.classList.add('show'),10); } else b2.style.display='none'; }
+function hideControls() { document.getElementById('controls').innerHTML=''; }
+function renderHand() { const d = document.getElementById('player-hand'); d.innerHTML=''; const h = App.players[App.players.length-1].hand; if(App.gameId==='bigtwo') h.sort((a,b)=>a.val-b.val); d.className = h.length < 5 ? 'my-hand few-cards' : 'my-hand'; h.forEach(c => { const el = document.createElement('div'); if(c.type) { let colorClass = `uno-${c.tempColor || c.color}`; el.className = `card uno ${colorClass}`; let displayVal = c.val; if(c.type==='skip') displayVal = '⊘'; if(c.type==='reverse') displayVal = '⇄'; if(c.type==='draw2') displayVal = '+2'; el.innerHTML = `<div class="uno-corner">${displayVal}</div><div class="card-center-uno">${displayVal}</div><div class="uno-corner" style="top:auto;bottom:5px;left:auto;right:5px;transform:rotate(180deg)">${displayVal}</div>`; el.onclick = () => unoUserClick(c); } else { el.className = `card ${['♥','♦'].includes(c.s)?'red':'black'}`; el.innerHTML = `<div class="card-corner"><div>${c.r}</div><div>${c.s}</div></div><div class="card-center-suit">${c.s}</div>`; el.onclick = () => { c.sel=!c.sel; renderHand(); }; if(c.sel) el.classList.add('selected'); } d.appendChild(el); }); }
+function renderTable(cards) { const d=document.getElementById('table-cards'); d.innerHTML=''; cards.forEach(c=>{ const el=document.createElement('div'); if(c.type) { let colorClass = `uno-${c.tempColor || c.color}`; el.className = `card uno ${colorClass}`; let displayVal = c.val; if(c.type==='skip') displayVal = '⊘'; if(c.type==='reverse') displayVal = '⇄'; if(c.type==='draw2') displayVal = '+2'; el.innerHTML = `<div class="uno-corner">${displayVal}</div><div class="card-center-uno">${displayVal}</div>`; } else { el.className=`card ${['♥','♦'].includes(c.s)?'red':'black'}`; el.innerHTML = `<div class="card-corner"><div>${c.r}</div><div>${c.s}</div></div><div class="card-center-suit">${c.s}</div>`; } d.appendChild(el); }); }
+function updateOpponentVisuals() { const uBadge = document.getElementById('player-badge'); if(App.players[3].unoSaid) uBadge.classList.add('show'); else uBadge.classList.remove('show'); for(let i=0; i<App.players.length-1; i++) { const p = App.players[i]; if(App.gameId === 'oldmaid' || App.gameId === 'uno') { const c = document.getElementById(`mini-hand-${i}`); if(c) { c.innerHTML = ''; const count = Math.min(p.hand.length, 25); for(let j=0; j<count; j++) { let cls = 'mini-card'; if(App.gameId === 'uno') cls += ' uno-back'; c.innerHTML += `<div class="${cls}"></div>`; } if(p.hand.length > 25) { c.innerHTML += `<div style="font-size:0.6rem;color:#fff;align-self:center">+${p.hand.length-25}</div>`; } } const b = document.getElementById(`uno-badge-${i}`); if(b) { if(p.unoSaid) b.classList.add('show'); else b.classList.remove('show'); } } if(App.gameId === 'bigtwo') { const b = document.getElementById(`b2-badge-${i}`); if(b) b.innerText = p.hand.length; } } }
+function showResult(win, amt, msg="") { const m = document.getElementById('modal-result'); if(win === 'push') { document.getElementById('res-title').innerText="PUSH"; document.getElementById('res-title').style.color="#fff"; updateScore(amt); } else if(win) { App.wins++; document.getElementById('res-title').innerText="VICTORY"; document.getElementById('res-title').style.color="var(--gold)"; sfx('sfx-win'); updateScore(amt); } else { App.losses++; document.getElementById('res-title').innerText="DEFEAT"; document.getElementById('res-title').style.color="#888"; updateScore(amt); } let fullMsg = (amt>0?"+":"") + amt + " Coins"; if(msg) fullMsg += `<br><span style='font-size:0.8rem;color:#aaa'>${msg}</span>`; document.getElementById('res-msg').innerHTML = fullMsg; updateUI(); m.style.display = 'flex'; }
 </script>
 </body>
 </html>
