@@ -229,7 +229,11 @@
 <audio id="sfx-win" src="https://files.catbox.moe/rfy681.mp3"></audio>
 
 <div id="hud">
-    <div class="hud-btn" id="btn-bgm" onclick="toggleBGM(event)">♫</div>
+    <div style="display:flex; gap:10px; align-items:center;">
+        <div class="hud-btn" id="btn-music" onclick="toggleMusic(event)">♫</div>
+        <div class="hud-btn" id="btn-sfx" onclick="toggleSFX(event)">🔊</div>
+    </div>
+    
     <div class="score-board" onclick="openLoanScreen()">♦ <span id="ui-score">10,000</span> <span style="font-size:0.8rem;color:#888">(借款)</span></div>
     <div class="hud-btn" onclick="goHome()">⌂</div>
 </div>
@@ -712,7 +716,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         "這是留白。", 
         "Pass～"],
 doudizhu_bid:["好像很有趣，三分。", "我要當國王！", "不叫就不好玩了。"], loan_reject: ["沒錢哦。", "變不出來。", "下次吧。"] },
-        loanStages: [ { text: "想要變出錢嗎？", opts:[{t:"教我！", next:-1}, {t:"借我一點就好。", next:1}], }, { text: "不要。我沒事也不會借你錢。", reward: 0 } ]
+        loanStages: [ { text: "想要變出錢嗎？", opts:[{t:"教我！", next:-1}, {t:"借我一點就好。", next:1}], }, { text: "不要。我沒事也不會借你錢。", reward: 1} ]
     },
     { 
         id: 'poseidon', name: '海神', img: 'https://meee.com.tw/YWjKSUI.png', 
@@ -921,47 +925,107 @@ const RULES = {
 let App = { 
     coins: 10000, wins: 0, losses: 0, 
     gameId: '', selected: [], players: [], deck: [], 
-    turn: 0, bgm: false, direction: 1, table: [], 
+    turn: 0, bgm: false, sfx: true, direction: 1, table: [], // 新增 sfx: true
     unoRule: 'standard', unoStacking: false, unoStack: 0, 
     skillQueue: [], isProcessingSkill: false,
     lastWinner: -1, isFirstTurn: true 
 };
 
-if(localStorage.getItem('rabbit_save_v22')) {
-    const s = JSON.parse(localStorage.getItem('rabbit_save_v22'));
+// 讀取存檔
+if(localStorage.getItem('rabbit_save_v23')) { // 我稍微升級了存檔版本號以免衝突
+    const s = JSON.parse(localStorage.getItem('rabbit_save_v23'));
     App.coins = s.coins; App.wins = s.wins; App.losses = s.losses;
     if(s.bgm !== undefined) App.bgm = s.bgm;
+    if(s.sfx !== undefined) App.sfx = s.sfx;
 }
+if(isNaN(App.coins)) App.coins = 10000;
+updateUI(); // 確保 UI 初始化
+updateAudioIcons(); // 初始化按鈕狀態
 if(isNaN(App.coins)) App.coins = 10000;
 updateUI();
 
 /* --- 2. CORE FUNCTIONS --- */
-function ensureAudio() { document.body.removeAttribute('onclick'); updateAudioIcon(); }
+function ensureAudio() { document.body.removeAttribute('onclick'); updateAudioIcons(); }
+
 function updateUI() {
     if(App.coins < 0) App.coins = 0;
     document.getElementById('ui-score').innerText = App.coins.toLocaleString();
     document.getElementById('stat-wins').innerText = App.wins;
     document.getElementById('stat-losses').innerText = App.losses;
-    localStorage.setItem('rabbit_save_v22', JSON.stringify({coins:App.coins, wins:App.wins, losses:App.losses, bgm:App.bgm}));
+    // 存檔
+    localStorage.setItem('rabbit_save_v23', JSON.stringify({
+        coins:App.coins, wins:App.wins, losses:App.losses, bgm:App.bgm, sfx:App.sfx
+    }));
 }
-function toggleBGM(e) {
+
+// ★ 新的音樂切換
+function toggleMusic(e) {
     if(e) e.stopPropagation();
-    const a = document.getElementById('bgm'); a.volume = 0.4; App.bgm = !App.bgm;
-    if(App.bgm) a.play().catch(()=>{}); else a.pause();
-    updateAudioIcon(); updateUI();
+    App.bgm = !App.bgm;
+    const a = document.getElementById('bgm'); 
+    a.volume = 0.4;
+    if(App.bgm) {
+        a.play().catch(e => console.log("Audio play failed:", e)); 
+    } else {
+        a.pause();
+    }
+    updateAudioIcons(); updateUI();
 }
-function updateAudioIcon() {
-    const btn = document.getElementById('btn-bgm');
-    if(App.bgm) { btn.style.opacity = 1; btn.innerText = "♫"; document.getElementById('bgm').play().catch(()=>{}); } 
-    else { btn.style.opacity = 0.5; btn.innerText = "✕"; document.getElementById('bgm').pause(); }
+
+// ★ 新的音效切換
+function toggleSFX(e) {
+    if(e) e.stopPropagation();
+    App.sfx = !App.sfx;
+    // 播放一個短音效來測試
+    if(App.sfx) sfx('sfx-card');
+    updateAudioIcons(); updateUI();
 }
-function sfx(id) { if(!App.bgm) return; document.getElementById(id).currentTime=0; document.getElementById(id).play().catch(()=>{}); }
+
+// ★ 更新兩個按鈕的圖示透明度
+function updateAudioIcons() {
+    const btnM = document.getElementById('btn-music');
+    const btnS = document.getElementById('btn-sfx');
+    
+    // 音樂按鈕狀態
+    if(App.bgm) { 
+        btnM.style.opacity = 1; btnM.innerText = "♫"; 
+        document.getElementById('bgm').play().catch(()=>{}); 
+    } else { 
+        btnM.style.opacity = 0.5; btnM.innerText = "✕"; 
+        document.getElementById('bgm').pause(); 
+    }
+
+    // 音效按鈕狀態
+    if(App.sfx) {
+        btnS.style.opacity = 1; btnS.innerText = "🔊";
+    } else {
+        btnS.style.opacity = 0.5; btnS.innerText = "🔇";
+    }
+}
+
+// ★ 播放音效 (現在只檢查 App.sfx，不再受 bgm 影響)
+function sfx(id) { 
+    if(!App.sfx) return; 
+    const audio = document.getElementById(id);
+    if(audio) {
+        audio.currentTime = 0; 
+        audio.play().catch(()=>{}); 
+    }
+}
 function switchScreen(id) { document.querySelectorAll('.screen').forEach(el => el.classList.remove('active')); document.getElementById(id).classList.add('active'); }
 function goHome() { document.getElementById('modal-result').style.display = 'none'; document.getElementById('modal-loan').style.display = 'none'; switchScreen('screen-menu'); }
+
+// ★ 修改進入大廳邏輯 (限制 500 元)
 function goToLobby(gid) {
+    // 檢查餘額
+    if(App.coins < 500) {
+        alert("⚠️ 資金不足！\n\n你的代幣低於 500，無法入場。\n請點擊上方分數欄位進行「借款協商」。");
+        return; // 直接中斷，不切換畫面
+    }
+
     App.gameId = gid; App.selected = []; renderLobby(); switchScreen('screen-lobby');
     document.getElementById('lobby-uno-opt').style.display = (gid === 'uno') ? 'block' : 'none';
-    updateAudioIcon();
+    updateAudioIcons();
 }
 
 /* --- LOBBY & SKILL DISPLAY --- */
@@ -1085,7 +1149,8 @@ function distributeSkillCards() {
 // ★ 初始化遊戲 (修復 UI 遺失、座位生成、索引問題)
 function initGame() {
     document.getElementById('modal-result').style.display = 'none'; 
-    switchScreen('screen-game'); updateAudioIcon();
+    switchScreen('screen-game'); 
+    updateAudioIcons(); // <--- 加上 's'
     App.skillQueue = []; App.isProcessingSkill = false;
     
     // 1. 建立玩家數據 (User 永遠是最後一位)
@@ -1161,6 +1226,11 @@ function initGame() {
 
 /* --- HELPERS (UI UPDATES) --- */
 // ★ 自動尋找玩家 (修復 21點/鬥地主 找不到牌的問題)
+function createDeck() { const s=['♣','♦','♥','♠'], r=['3','4','5','6','7','8','9','10','J','Q','K','A','2']; let d=[]; s.forEach((ss,i)=>r.forEach((rr,j)=>d.push({s:ss,r:rr,val:j*4+i}))); return d.sort(()=>Math.random()-0.5); }
+function updateScore(v) { App.coins+=v; updateUI(); }
+function setStatus(t) { const b=document.getElementById('status-bar'); if(b){b.innerText=t; b.classList.add('active'); setTimeout(()=>b.classList.remove('active'),500);} }
+function setControls(l1,l2,f1,f2) { const c = document.getElementById('controls'); c.innerHTML = `<button class="btn-act btn-pass" id="btn-pass">${l2}</button><button class="btn-act" id="btn-play">${l1}</button>`; const b1=document.getElementById('btn-play'), b2=document.getElementById('btn-pass'); if(l1) { b1.onclick=f1; setTimeout(()=>b1.classList.add('show'),10); } else b1.style.display='none'; if(l2) { b2.onclick=f2; setTimeout(()=>b2.classList.add('show'),10); } else b2.style.display='none'; }
+function hideControls() { document.getElementById('controls').innerHTML=''; }
 function renderHand() { 
     const userIdx = App.players.findIndex(p => p.isUser);
     const d = document.getElementById('player-hand'); 
@@ -2024,79 +2094,117 @@ function omTurn() {
     if(picker.isUser) { setStatus("YOUR TURN"); const zone = document.getElementById('table-cards'); zone.innerHTML = ''; target.hand.forEach((c,i)=>{ const el = document.createElement('div'); el.className='card back'; el.onclick = ()=>omUserPick(target, i); zone.appendChild(el); }); } 
     else { setTimeout(()=>{ const r = Math.floor(Math.random()*target.hand.length); const c = target.hand.splice(r,1)[0]; picker.hand.push(c); cleanPairs(picker.hand); updateOpponentVisuals(); if(target.isUser) renderHand(); say(pIdx, 'play'); sfx('sfx-card'); App.turn=(App.turn+1)%4; omTurn(); }, 1200); } 
 }
-function omUserPick(target, idx) { const c = target.hand.splice(idx,1)[0]; App.players[3].hand.push(c); sfx('sfx-card'); document.getElementById('table-cards').innerHTML = ''; renderTable([c]); cleanPairs(App.players[3].hand); renderHand(); updateOpponentVisuals(); if(c.r==='JK') document.getElementById('msg-large').innerText="JOKER!"; setTimeout(()=>{ document.getElementById('table-cards').innerHTML = ''; App.turn=(App.turn+1)%4; omTurn(); }, 1000); }
+function omUserPick(target, idx) { const c = target.hand.splice(idx,1)[0]; App.players[3].hand.push(c); sfx('sfx-card'); 
+document.getElementById('table-cards').innerHTML = '';
+ renderTable([c]); cleanPairs(App.players[3].hand); renderHand(); 
+ updateOpponentVisuals(); if(c.r==='JK') document.getElementById('msg-large').innerText="JOKER!";
+ setTimeout(()=>{ document.getElementById('table-cards').innerHTML = ''; App.turn=(App.turn+1)%4; omTurn(); }, 1000); 
+}/* --- LOAN SYSTEM (FIXED) --- */
+let loanTarget = null;
+let loanStage = 0;
 
-/* --- HELPERS --- */
-function createDeck() { const s=['♣','♦','♥','♠'], r=['3','4','5','6','7','8','9','10','J','Q','K','A','2']; let d=[]; s.forEach((ss,i)=>r.forEach((rr,j)=>d.push({s:ss,r:rr,val:j*4+i}))); return d.sort(()=>Math.random()-0.5); }
-function updateScore(v) { App.coins+=v; updateUI(); }
-function setStatus(t) { const b=document.getElementById('status-bar'); b.innerText=t; b.classList.add('active'); setTimeout(()=>b.classList.remove('active'),500); }
-function setControls(l1,l2,f1,f2) { const c = document.getElementById('controls'); c.innerHTML = `<button class="btn-act btn-pass" id="btn-pass">${l2}</button><button class="btn-act" id="btn-play">${l1}</button>`; const b1=document.getElementById('btn-play'), b2=document.getElementById('btn-pass'); if(l1) { b1.onclick=f1; setTimeout(()=>b1.classList.add('show'),10); } else b1.style.display='none'; if(l2) { b2.onclick=f2; setTimeout(()=>b2.classList.add('show'),10); } else b2.style.display='none'; }
-function hideControls() { document.getElementById('controls').innerHTML=''; }
-function renderHand() { 
-    const user = App.players.find(p => p.isUser);
-    const d = document.getElementById('player-hand'); d.innerHTML=''; 
-    if(!user || !user.hand) return;
-    const h = user.hand; 
-    if(App.gameId==='bigtwo') h.sort((a,b)=>getAbsVal(a)-getAbsVal(b));
-    if(App.gameId==='doudizhu') h.sort((a,b)=>getDDZAbs(b)-getDDZAbs(a)); // 鬥地主倒序排列
-    
-    d.className = h.length < 5 ? 'my-hand few-cards' : 'my-hand'; 
-    h.forEach(c => { 
-        const el = document.createElement('div'); 
-        if(c.type) { 
-            let colorClass = `uno-${c.tempColor || c.color}`; el.className = `card uno ${colorClass}`; 
-            let displayVal = c.val; if(c.type==='skip') displayVal = '⊘'; if(c.type==='reverse') displayVal = '⇄'; if(c.type==='draw2') displayVal = '+2'; 
-            el.innerHTML = `<div class="uno-corner">${displayVal}</div><div class="card-center-uno">${displayVal}</div>`; 
-            el.onclick = () => unoUserClick(c); 
-        } else { 
-            el.className = `card ${['♥','♦'].includes(c.s)?'red':'black'}`; 
-            el.innerHTML = `<div class="card-corner"><div>${c.r}</div><div>${c.s}</div></div><div class="card-center-suit">${c.s}</div>`; 
-            el.onclick = () => { c.sel=!c.sel; renderHand(); }; 
-            if(c.sel) el.classList.add('selected'); 
-        } 
-        d.appendChild(el); 
-    }); 
+function openLoanScreen() {
+    renderLoanList();
+    switchScreen('screen-loan');
 }
-function renderTable(cards) { const d=document.getElementById('table-cards'); d.innerHTML=''; cards.forEach(c=>{ const el=document.createElement('div'); if(c.type) { let colorClass = `uno-${c.tempColor || c.color}`; el.className = `card uno ${colorClass}`; let displayVal = c.val; if(c.type==='skip') displayVal = '⊘'; if(c.type==='reverse') displayVal = '⇄'; if(c.type==='draw2') displayVal = '+2'; el.innerHTML = `<div class="uno-corner">${displayVal}</div><div class="card-center-uno">${displayVal}</div>`; } else { el.className=`card ${['♥','♦'].includes(c.s)?'red':'black'}`; el.innerHTML = `<div class="card-corner"><div>${c.r}</div><div>${c.s}</div></div><div class="card-center-suit">${c.s}</div>`; } d.appendChild(el); }); }
-function updateOpponentVisuals() {
-    const btn = document.querySelector('.fixed-uno-btn');
-    const user = App.players.find(p => p.isUser);
-    if (btn) { 
-        if (user && user.unoSaid) { btn.classList.add('said'); btn.innerText = "SAFE"; } 
-        else { btn.classList.remove('said'); btn.innerText = "UNO!"; } 
-    }
-    const uBadge = document.getElementById('player-badge'); if(uBadge) { if(user && user.unoSaid) uBadge.classList.add('show'); else uBadge.classList.remove('show'); } 
+// 修正：改為讀取 CHARS 全域變數，而不是讀取 App.players
+function renderLoanList() {
+    const list = document.getElementById('loan-list');
+    list.innerHTML = '';
     
-    // 遍歷所有非玩家角色
-    App.players.forEach((p, i) => {
-        if(p.isUser) return;
-        if(App.gameId === 'oldmaid' || App.gameId === 'uno') { 
-            const c = document.getElementById(`mini-hand-${i}`); 
-            if(c) { c.innerHTML = ''; const count = Math.min(p.hand.length, 25); for(let j=0; j<count; j++) { let cls = 'mini-card'; if(App.gameId === 'uno') cls += ' uno-back'; c.innerHTML += `<div class="${cls}"></div>`; } if(p.hand.length > 25) { c.innerHTML += `<div style="font-size:0.6rem;color:#fff;align-self:center">+${p.hand.length-25}</div>`; } } 
-            const b = document.getElementById(`uno-badge-${i}`); if(b) { if(p.unoSaid) b.classList.add('show'); else b.classList.remove('show'); } 
-        } 
-        if(App.gameId === 'bigtwo' || App.gameId === 'doudizhu') { 
-            const b = document.getElementById(`count-badge-${i}`); 
-            if(b) b.innerText = p.hand.length; 
-        } 
-        // 鬥地主身份帽
-        if(App.gameId === 'doudizhu') {
-            const r = document.getElementById(`role-${i}`);
-            if(r) { 
-                if(p.role==='landlord') { r.className='role-badge role-landlord show'; r.innerText='地'; }
-                else { r.className='role-badge role-peasant show'; r.innerText='農'; }
-            }
-        }
+    // 直接從所有角色資料中篩選出有設定借款劇情的角色
+    const lenders = CHARS.filter(c => c.loanStages && c.loanStages.length > 0);
+    
+    if(lenders.length === 0) {
+        list.innerHTML = '<div style="color:#666;width:100%;text-align:center;padding:20px;">暫無可借款對象</div>';
+        return;
+    }
+
+    lenders.forEach(charData => {
+        const item = document.createElement('div');
+        item.className = 'loan-item';
+        item.innerHTML = `
+            <img class="loan-avatar-sm" src="${charData.img}">
+            <div class="loan-info">
+                <div class="loan-name">${charData.name}</div>
+                <div class="loan-hint">信用協商</div>
+            </div>
+        `;
+        // 傳遞的是 charData (角色資料物件)，而不是 player 物件
+        item.onclick = () => loanNegotiate(charData);
+        list.appendChild(item);
     });
 }
-function showResult(win, amt, msg="") { 
-    const m = document.getElementById('modal-result'); 
-    if(win === 'push') { document.getElementById('res-title').innerText="PUSH"; document.getElementById('res-title').style.color="#fff"; updateScore(amt); } 
-    else if(win) { App.wins++; document.getElementById('res-title').innerText="VICTORY"; document.getElementById('res-title').style.color="var(--gold)"; sfx('sfx-win'); updateScore(amt); } 
-    else { App.losses++; document.getElementById('res-title').innerText="DEFEAT"; document.getElementById('res-title').style.color="#888"; updateScore(amt); } 
-    let fullMsg = (amt>0?"+":"") + amt + " Coins"; 
-    if(msg) fullMsg += `<br><span style='font-size:0.8rem;color:#aaa'>${msg}</span>`; 
-    document.getElementById('res-msg').innerHTML = fullMsg; 
-    updateUI(); 
-    m.style.display = 'flex'; 
-}</script>
+
+// 修正：參數接收 charData
+function loanNegotiate(charData) {
+    // 檢查金錢限制 (大於 500 不能借)
+    if(App.coins > 500) {
+        alert("你的錢還夠用，別貪心！\n(低於 500 才能借款)");
+        return;
+    }
+    loanTarget = charData; // 這裡存的是角色資料
+    loanStage = 0;
+    showLoanDialog();
+}
+
+function showLoanDialog() {
+    const m = document.getElementById('modal-loan');
+    // 修正：因為 loanTarget 現在直接就是角色資料，不需要再 .char
+    const charData = loanTarget; 
+    const stageData = charData.loanStages[loanStage];
+    
+    // 設定頭像與名稱
+    document.getElementById('loan-avatar').src = charData.img;
+    
+    // 設定對話內容
+    const txtEl = document.getElementById('loan-text');
+    txtEl.innerText = `"${stageData.text}"`;
+    
+    // 設定選項
+    const optArea = document.getElementById('loan-options');
+    optArea.innerHTML = '';
+    
+    // 如果是獲得金錢的結尾階段
+    if(stageData.reward) {
+        const btn = document.createElement('div');
+        btn.className = 'loan-opt';
+        btn.innerText = "收下款項";
+        btn.onclick = () => {
+            updateScore(stageData.reward);
+            alert(`從 ${charData.name} 獲得了 ${stageData.reward} 代幣！`);
+            m.style.display = 'none';
+            switchScreen('screen-menu');
+        };
+        optArea.appendChild(btn);
+    } 
+    // 如果還有對話選項
+    else if(stageData.opts) {
+        stageData.opts.forEach(opt => {
+            const btn = document.createElement('div');
+            btn.className = 'loan-opt';
+            btn.innerText = opt.t;
+            btn.onclick = () => {
+                if(opt.next === -1) {
+                    // 拒絕/失敗
+                    if(charData.lines && charData.lines.loan_reject) {
+                        const rejPool = charData.lines.loan_reject;
+                        txtEl.innerText = `"${rejPool[Math.floor(Math.random()*rejPool.length)]}"`;
+                    } else {
+                        txtEl.innerText = `"${charData.name} 拒絕了你的請求。"`;
+                    }
+                    optArea.innerHTML = `<div class="loan-opt" onclick="document.getElementById('modal-loan').style.display='none'">離開</div>`;
+                } else {
+                    // 下一階段
+                    loanStage = opt.next;
+                    showLoanDialog();
+                }
+            };
+            optArea.appendChild(btn);
+        });
+    }
+    
+    m.style.display = 'flex';
+}
+</script> </body>
+</html>
