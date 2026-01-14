@@ -2,7 +2,11 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
+<meta name="mobile-web-app-capable" content="yes">  
+<meta name="apple-mobile-web-app-capable" content="yes"> 
+<meta name="theme-color" content="#000000"> 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link rel="icon" href="https://file.garden/aWe99vhwaGcNwkok/%E8%B3%AD%E5%A0%B4/item_1%20(1).png" type="image/png">
 <title>Rabbit Casino - Soul & Skill Edition</title>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap');
@@ -224,9 +228,9 @@
 </head>
 <body onclick="ensureAudio()">
 
-<audio id="bgm" loop><source src="https://files.catbox.moe/zqmn32.mp3" type="audio/mpeg"></audio>
-<audio id="sfx-card" src="https://files.catbox.moe/0bdvj7.mp3"></audio>
-<audio id="sfx-win" src="https://files.catbox.moe/rfy681.mp3"></audio>
+<audio id="bgm" loop><source src="https://file.garden/aWe99vhwaGcNwkok/%E8%B3%AD%E5%A0%B4/231.%20Jazz.mp3" type="audio/mpeg"></audio>
+<audio id="sfx-card" src="https://file.garden/aWe99vhwaGcNwkok/%E8%B3%AD%E5%A0%B4/%E3%82%AB%E3%83%BC%E3%83%89%E3%82%92%E3%82%81%E3%81%8F%E3%82%8B.mp3"></audio>
+<audio id="sfx-win" src="https://file.garden/aWe99vhwaGcNwkok/%E8%B3%AD%E5%A0%B4/%E3%81%8A%E9%87%91%E3%82%92%E8%90%BD%E3%81%A8%E3%81%991.mp3"></audio>
 
 <div id="hud">
     <div style="display:flex; gap:10px; align-items:center;">
@@ -325,7 +329,7 @@
 /* --- 1. CHARACTER DATA & CONFIG --- */
 const CHARS = [
     { 
-        id: 'venato', name: '維納托', img: 'https://i.meee.com.tw/HAvzdTj.png', 
+        id: 'venato', name: '維納托', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E7%B6%AD%E7%B4%8D%E6%89%98.png', 
         uno_shout_rate: 0.95, uno_catch_rate: 0.95, cp_id: 'narcissus',
         skills: {
             uno: { name: "變量計算", desc: "被 +4 攻擊時，有 30% 機率直接將傷害反彈給下家。" },
@@ -359,7 +363,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         loanStages: [ { text: "借錢？我的計算中沒有這個變量。", opts: [{t:"為了驗證混沌理論。", next:1}, {t:"大家都是朋友嘛。", next:-1}] }, { text: "混沌理論？你是說機率的不可預測性？有趣。", opts: [{t:"沒錯，這是實驗經費。", next:-1}, {t:"我就想賭一把。", next:2}] }, { text: "好吧，本王看在你誠實的份上。", reward: 3000 } ]
     },
     { 
-        id: 'narcissus', name: '納西瑟斯', img: 'https://i.meee.com.tw/kvfcmWP.png', 
+        id: 'narcissus', name: '納西瑟斯', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E7%B4%8D%E5%B8%8C%E7%91%9F%E6%96%AF.png', 
         uno_shout_rate: 0.8, uno_catch_rate: 0.6, cp_id: 'venato',
         skills: {
             uno: { name: "鏡像反射", desc: "打出迴轉 (Reverse) 時，讓被迴轉的對象暫停一回合。" },
@@ -397,7 +401,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         loanStages: [ { text: "我的錢都是拿來給維納托先生的...", opts:[{t:"那算了。", next:-1}, {t:"維納托先生讓我來找你拿。", next:1}], }, { text: "真的嗎？全部都給你！", reward: 5000 } ]
     },
     { 
-        id: 'peter', name: '彼得', img: 'https://i.meee.com.tw/PJOElT9.png', 
+        id: 'peter', name: '彼得', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E5%BD%BC%E5%BE%97.png', 
         uno_shout_rate: 0.7, uno_catch_rate: 0.7, cp_id: 'lynn',
         skills: {
             uno: { name: "神聖驅邪", desc: "被跳過 (Skip) 時，有 50% 機率免疫並繼續回合。" },
@@ -435,7 +439,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         loanStages: [ { text: "這筆錢流向你，我看見了凶兆。", opts: [{t:"我會拿去捐給教會。", next:1}, {t:"我要逆天改命。", next:-1}] }, { text: "教會？『紙會』嗎？算你有心。", opts: [{t:"阿門。", next:2}, {t:"呃...", next:-1}] }, { text: "願主保佑你。", reward: 2000 } ]
     },
     { 
-        id: 'lynn', name: '林恩', img: 'https://i.meee.com.tw/kxAllct.png', 
+        id: 'lynn', name: '林恩', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E6%9E%97%E6%81%A9.png', 
         uno_shout_rate: 0.2, uno_catch_rate: 0.1, cp_id: 'peter',
         skills: {
             uno: { name: "懶惰防禦", desc: "被 +2 或 +4 時，自動減少一張抽牌數。" },
@@ -473,7 +477,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         loanStages: [ { text: "你找林恩幹嘛...", opts: [{t:"(拿走錢)", next:-1}, {t:"幫你買披薩。", next:1}] }, { text: "披薩？要夏威夷口味的，加雙份鳳梨。", opts: [{t:"沒問題。", next:2}, {t:"鳳梨是邪教。", next:-1}] }, { text: "好耶披薩......", reward: 860 } ]
     },
     { 
-        id: 'lanlan', name: '蘭蘭', img: 'https://i.meee.com.tw/wgADv31.png', 
+        id: 'lanlan', name: '蘭蘭', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E8%98%AD%E8%98%AD.png', 
         uno_shout_rate: 0.5, uno_catch_rate: 0.5, cp_id: 'jonona',
         skills: {
             uno: { name: "放火大會", desc: "開局手牌必定包含 +4 或 +2。" },
@@ -510,7 +514,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         loanStages: [ { text: "你要錢嗎？我有好多呀！你要拿去買什麼？", opts: [{t:"買給喬諾娜的禮物。", next:1}, {t:"去賭博。", next:-1}] }, { text: "給喬諾娜的？好耶！那你要買什麼？", opts: [{t:"漂亮的衣服。", next:2}, {t:"奇怪的杯子。", next:-1}] }, { text: "太棒了！拿去拿去！", reward: 4000 } ]
     },
     { 
-        id: 'jonona', name: '喬諾娜', img: 'https://i.meee.com.tw/duMFdPy.png', 
+        id: 'jonona', name: '喬諾娜', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E5%96%AC%E8%AB%BE%E5%A8%9C.png', 
         uno_shout_rate: 0.6, uno_catch_rate: 0.2, cp_id: 'lanlan',
         skills: {
             uno: { name: "幸運櫻桃", desc: "忘記喊 UNO 被抓時，有 50% 機率免疫懲罰。" },
@@ -548,7 +552,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         loanStages: [ { text: "我、我也沒什麼錢...但我可以分你一點。", opts:[{t:"謝謝你！", next:1}, {t:"太少了。", next:-1}], }, { text: "加油喔...別再輸光了...", reward: 500 } ]
     },
     { 
-        id: 'xiaomu', name: '小目', img: 'https://i.meee.com.tw/IHt74xD.png', 
+        id: 'xiaomu', name: '小目', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E5%B0%8F%E7%9B%AE.png', 
         uno_shout_rate: 0.9, uno_catch_rate: 0.9, cp_id: 'mollie',
         skills: { 
             uno: {name:"壟斷", desc:"使用 Wild 時，會直接打出下一張同色牌(連打)。"}, 
@@ -572,7 +576,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         loanStages: [ { text: "資金鍊斷裂了？我可以注資，但我要聽實話。", opts: [{t:"這是戰略性虧損。", next:1}, {t:"求求你借我錢！", next:-1}] }, { text: "哼，有意思。你的擔保是什麼？", opts: [{t:"我是為了茉莉才玩的。", next:2}, {t:"我會還你兩倍。", next:-1}] }, { text: "看在茉莉的份上...這叫天使投資。", reward: 5000 } ]
     },
     { 
-        id: 'mollie', name: '茉莉', img: 'https://i.meee.com.tw/yUTV61e.png', 
+        id: 'mollie', name: '茉莉', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E8%8C%89%E8%8E%89.png', 
         uno_shout_rate: 0.95, uno_catch_rate: 0.3, cp_id: 'xiaomu',
         skills: { 
             uno: {name:"安慰劑", desc:"被 +2 攻擊時，只需抽 1 張。"}, 
@@ -596,7 +600,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         loanStages: [ { text: "你還好嗎？臉色不太好。", opts:[{t:"是的醫生，我破產了。", next:1}, {t:"不用。", next:-1}], }, { text: "呃好吧，這點錢拿去急用吧，別告訴林恩。", reward: 800 } ]
     },
 {
-        id: 'kleion', name: '克里昂', img: 'https://i.meee.com.tw/2gcElaW.png', 
+        id: 'kleion', name: '克里昂', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E5%85%8B%E9%87%8C%E6%98%82.png', 
         uno_shout_rate: 0.8, uno_catch_rate: 0.6, cp_id: 'costa',
         skills: {
             uno: { name: "騎士反擊", desc: "被 +2 時，必定打出 +2 反擊（若有）。" },
@@ -636,7 +640,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         loanStages: [ { text: "兄弟，沒錢了嗎？", opts:[{t:"支援一下！", next:1}, {t:"不用。", next:-1}] }, { text: "這是我私房錢，別告訴科絲塔！", reward: 1000 } ]
     },
     {
-        id: 'costa', name: '科絲塔', img: 'https://i.meee.com.tw/bvWXxHc.png', 
+        id: 'costa', name: '科絲塔', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E7%A7%91%E7%B5%B2%E5%A1%94.png', 
         uno_shout_rate: 0.7, uno_catch_rate: 0.5, cp_id: 'kleion',
         skills: {
             uno: { name: "裝傻BATA", desc: "忘記喊 UNO 被抓時，有 50% 機率免疫懲罰。" },
@@ -674,7 +678,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         loanStages: [ { text: "你要錢做什麼BATA？", opts:[{t:"買彩虹小馬。", next:1}, {t:"去賭博。", next:-1}] }, { text: "我也喜歡彩虹小馬！給你BATA！", reward: 500 } ]
     },
     { 
-        id: 'aura', name: '奧拉', img: 'https://i.meee.com.tw/SCMPHmm.png', 
+        id: 'aura', name: '奧拉', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E5%A5%A7%E6%8B%89.png', 
         uno_shout_rate: 1.0, uno_catch_rate: 1.0, cp_id: 'miras',
         skills: { 
             uno: {name:"指定變量", desc:"使用 +4 時，傷害無法被疊加防禦，且無視玩家的防禦技能。"}, 
@@ -697,7 +701,7 @@ uno_poke_early: ["別碰本王！算式會亂掉！", "怎麼了？還沒到時�
         loanStages: [ { text: "貸款？請提供抵押品。", opts: [{t:"我的靈魂。", next:1}, {t:"下次還你。", next:-1}] }, { text: "靈魂...有趣的變量。簽下這份契約。", opts: [{t:"(簽名)", next:2}, {t:"太危險了。", next:-1}] }, { text: "契約成立。別讓數據失望。", reward: 30000 } ]
     },
     { 
-        id: 'miras', name: '蜜拉思', img: 'https://i.meee.com.tw/EQxAIYg.png', 
+        id: 'miras', name: '蜜拉思', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E8%9C%9C%E6%8B%89%E6%80%9D.png', 
         uno_shout_rate: 0.8, uno_catch_rate: 0.9, cp_id: 'aura',
         skills: { 
             uno: {name:"詛咒魔術", desc:"被 +2 或 +4 時，傷害減半（無條件捨去）。"}, 
@@ -719,7 +723,7 @@ doudizhu_bid:["好像很有趣，三分。", "我要當國王！", "不叫就不
         loanStages: [ { text: "想要變出錢嗎？", opts:[{t:"教我！", next:-1}, {t:"借我一點就好。", next:1}], }, { text: "不要。我沒事也不會借你錢。", reward: 1} ]
     },
     { 
-        id: 'poseidon', name: '海神', img: 'https://meee.com.tw/YWjKSUI.png', 
+        id: 'poseidon', name: '海神', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E6%B5%B7%E7%A5%9E.png', 
         uno_shout_rate: 0.4, uno_catch_rate: 0.4, cp_id: 'hades',
         skills: { 
             uno: {name:"大海嘯", desc:"打出 +4 時，強制重新洗混所有玩家的手牌並隨機分配（亂流）。"}, 
@@ -757,7 +761,7 @@ doudizhu_bid:["好像很有趣，三分。", "我要當國王！", "不叫就不
         loanStages: [ { text: "哈哈！錢是什麼？大黑有！", opts:[{t:"那我去找大黑。", next:1}, {t:"借我啦！", next:-1}], }, { text: "大黑說不行，但我偷拿給你！", reward: 20 } ]
     },
     { 
-        id: 'hades', name: '冥神', img: 'https://i.meee.com.tw/dhxSvcN.png', 
+        id: 'hades', name: '冥神', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E5%86%A5%E7%A5%9E.png', 
         uno_shout_rate: 0.9, uno_catch_rate: 0.8, cp_id: 'poseidon',
         skills: { 
             uno: {name:"沉默是金", desc:"被動技能：不需要喊 UNO 也不會被抓。"}, 
@@ -777,7 +781,7 @@ doudizhu_bid:["好像很有趣，三分。", "我要當國王！", "不叫就不
         loanStages: [ { text: "...", opts:[{t:"(伸出手)", next:1}, {t:"(轉身離開)", next:-1}], }, { text: "...", reward: 300 } ]
     },
     { 
-        id: 'novian', name: '諾維安', img: 'https://i.meee.com.tw/Zg7Yp3n.png', 
+        id: 'novian', name: '諾維安', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E8%AB%BE%E7%B6%AD%E5%AE%89.png', 
         uno_shout_rate: 0.6, uno_catch_rate: 0.4,
         skills: {
             uno: { name: "精準導航", desc: "使用功能牌後，若手牌還有同色牌，會追加打出一張。" },
@@ -810,7 +814,7 @@ doudizhu_bid:["好像很有趣，三分。", "我要當國王！", "不叫就不
         loanStages: [ { text: "你需要資金修船嗎？還是去探險？", opts:[{t:"我要去尋寶！(賭博)", next:1}, {t:"沒事。", next:-1}] }, { text: "尋寶聽起來很棒！這是贊助費！", reward: 1500 } ]
     },
     { 
-        id: 'lazar', name: '拉扎爾', img: 'https://i.meee.com.tw/WCAtfdV.png', 
+        id: 'lazar', name: '拉扎爾', img: 'https://file.garden/aWe99vhwaGcNwkok/%E7%A0%B4%E9%A0%AD/%E6%8B%89%E6%89%8E%E7%88%BE.png', 
         uno_shout_rate: 0.3, uno_catch_rate: 0.2,
         skills: {
             uno: { name: "緊急治療", desc: "被強制抽牌時，抽牌數 -1。" },
